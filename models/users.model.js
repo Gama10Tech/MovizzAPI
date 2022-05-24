@@ -14,12 +14,39 @@ module.exports = (mongoose) => {
                 xp: { type: Number, required: [true, 'O campo xp não pode estar vazio ou ser inválido'] },
                 is_admin: { type: Boolean, required: [true, 'O campo is_admin não pode estar vazio ou ser inválido'] },
                 is_locked: { type: Boolean, required: [true, 'O campo is_locked não pode estar vazio ou ser inválido'] },
-                played: [],
-                quiz_ratings: [],
-                title_ratings: [],
-                seen: [],
-                favourites: [],
-                prizes_reedemed: [],
+                played: [
+                    {
+                        type: mongoose.Schema.Types.ObjectId,
+                        ref: 'quiz'
+                    }                        
+                ],
+                quiz_ratings: [
+                    
+                ],
+                title_ratings: [
+                    {
+                        title_id: {type: mongoose.Schema.Types.ObjectId, ref: 'title'},
+                        rating: Number
+                    }
+                ],
+                seen: [
+                    {
+                        type: mongoose.Schema.Types.ObjectId,
+                        ref: 'title'
+                    } 
+                ],
+                favourites: [
+                    {
+                        type: mongoose.Schema.Types.ObjectId,
+                        ref: 'title'
+                    } 
+                ],
+                prizes_reedemed: [
+                    {
+                        type: mongoose.Schema.Types.ObjectId,
+                        ref: 'prize'
+                    } 
+                ],
                 stats: {
                     level: { type: Number, required: [true, 'O campo level não pode estar vazio ou ser inválido'] },
                     quizzes_completed: { type: Number, required: [true, 'O campo quizzes_completed não pode estar vazio ou ser inválido'] },
