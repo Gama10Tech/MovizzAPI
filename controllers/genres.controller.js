@@ -4,7 +4,7 @@ const User = db.users;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             let data = await Genre.find().exec();
             res.status(200).json({ success: true, msg: data });
         } else {
@@ -21,7 +21,7 @@ exports.findAll = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             if (isInt(req.params.genre_id)) {
                 const genre = await Genre.findOne({ genre_id: req.params.genre_id }).exec();
                 if (genre === null)

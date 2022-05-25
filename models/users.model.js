@@ -53,8 +53,7 @@ module.exports = (mongoose) => {
                     questions_right: { type: Number, required: [true, 'O campo questions_right não pode estar vazio ou ser inválido'] },
                     questions_wrong: { type: Number, required: [true, 'O campo questions_wrong não pode estar vazio ou ser inválido'] },
                     times_help_needed: { type: Number, required: [true, 'O campo times_help_needed não pode estar vazio ou ser inválido'] }
-                },
-                auth_key: { type: String, required: [true, 'O campo auth_key não pode estar vazio ou ser inválido'] }
+                }
             }
         );
 

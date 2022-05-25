@@ -1,15 +1,16 @@
 const express = require('express');
 const quizController = require("../controllers/quizzes.controller");
+const authController = require("../controllers/auth.controller");
 
 let router = express.Router();
 
 router.route('/')
-    .get(quizController.findAll)
-    .post(quizController.create);
+    .get(authController.verifyToken, quizController.findAll)
+    .post(authController.verifyToken, quizController.create);
 
  router.route('/:quiz_id')
-    .get(quizController.findOne)
-    .patch(quizController.alterQuizById)
-    .delete(quizController.removeQuizById);
+    .get(authController.verifyToken, quizController.findOne)
+    .patch(authController.verifyToken, quizController.alterQuizById)
+    .delete(authController.verifyToken, quizController.removeQuizById);
 
 module.exports = router;

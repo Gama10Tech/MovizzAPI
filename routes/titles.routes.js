@@ -1,14 +1,15 @@
 const express = require('express');
 const titleController = require("../controllers/titles.controller");
+const authController = require("../controllers/auth.controller");
 
 let router = express.Router();
 
 router.route('/')
-    .get(titleController.findAll)
-    .post(titleController.create);
+    .get(authController.verifyToken, titleController.findAll)
+    .post(authController.verifyToken, titleController.create);
 
 router.route('/:imdb_id')
-    .get(titleController.findOne)
-    .delete(titleController.deleteByImdbId);
+    .get(authController.verifyToken, titleController.findOne)
+    .delete(authController.verifyToken, titleController.deleteByImdbId);
 
 module.exports = router;

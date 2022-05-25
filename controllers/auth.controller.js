@@ -1,5 +1,7 @@
 const db = require("../models/index.js");
 const User = db.users;
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 exports.login = async (req, res) => {
     try {
@@ -7,7 +9,8 @@ exports.login = async (req, res) => {
             if (req.body.password) {
                 const userData = await User.findOne({ $and: [ { email: req.body.email }, { password: req.body.password  } ] })
                 if (userData) {
-                    res.status(200).json({ success: true, auth_key: userData["auth_key"] });
+                    const token = jwt.sign({ id: userData.id }, db.secret, { expiresIn: '24h' });
+                    res.status(200).json({ success: true, auth_key: token, exp_date: new Date(new Date().getTime() + (24 * 60 * 60 * 1000)).toString() });
                 } else {
                     res.status(401).json({
                         success: false, msg: "A informação enviada não corresponde a nenhum utilizador"
@@ -29,3 +32,20 @@ exports.login = async (req, res) => {
         });
     }
 };
+
+exports.verifyToken = async (req, res, next) => {
+    const header = req.headers['x-access-token'] || req.headers.authorization || req.headers.Authorization;
+    if (typeof header == 'undefined') {
+        return res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });
+    }
+
+    const token = header.split(' ')[1];
+
+    try {
+        let decoded = jwt.verify(token, db.secret);
+        req.loggedUserId = decoded.id;
+        next();
+    } catch (err) {
+        return res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });
+    }
+}

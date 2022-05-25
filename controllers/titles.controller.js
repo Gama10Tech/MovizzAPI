@@ -4,7 +4,7 @@ const Title = db.titles;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             let data = await Title.find({}, 'imdb_id poster poster_webp title imdb_rating genre_id year country').exec();
             res.status(200).json({success: true, msg: data});
         } else {
@@ -21,7 +21,7 @@ exports.findAll = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             if (String(req.params.imdb_id).match(/ev\d{7}\/\d{4}(-\d)?|(ch|co|ev|nm|tt)\d{7}/)) {
                 if (await Title.findOne({ imdb_id: req.params.imdb_id })) {
                     res.status(200).json({success: true, msg: await Title.findOne({ imdb_id: req.params.imdb_id })});

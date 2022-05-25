@@ -4,7 +4,7 @@ const Quiz = db.quizzes;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             let data = await Quiz.find({}, 'quiz_id title theme_id poster poster_webp difficulty type').exec();
             res.status(200).json({success: true, msg: data});
         } else {
@@ -21,7 +21,7 @@ exports.findAll = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             if (isInt(req.params.quiz_id)) {
                 const data = await Quiz.findOne({ quiz_id: req.params.quiz_id });
                 if (data) {

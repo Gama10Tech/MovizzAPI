@@ -28,5 +28,6 @@ db.titles = require("./titles.model.js")(mongoose);
 db.themes = require("./themes.model.js")(mongoose);
 db.genres = require("./genres.model.js")(mongoose);
 db.prizes = require("./prizes.model.js")(mongoose);
+db.secret = dbConfig.SECRET;
 
 module.exports = db;

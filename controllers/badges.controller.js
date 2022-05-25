@@ -4,7 +4,7 @@ const User = db.users;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             let data = await Badge.find().exec();
             res.status(200).json({ success: true, msg: data });
         } else {
@@ -21,7 +21,7 @@ exports.findAll = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             if (isInt(req.params.badge_id)) {
                 const badge = await Badge.findOne({ badge_id: req.params.badge_id }).exec();
                 if (badge === null)

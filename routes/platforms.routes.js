@@ -1,12 +1,13 @@
 const express = require('express');
 const platformController = require("../controllers/platforms.controller");
+const authController = require("../controllers/auth.controller");
 
 let router = express.Router();
 
 router.route('/')
-    .get(platformController.findAll);
+    .get(authController.verifyToken, platformController.findAll);
 
 router.route('/:platform_id')
-    .get(platformController.findOne);
+    .get(authController.verifyToken, platformController.findOne);
 
 module.exports = router;

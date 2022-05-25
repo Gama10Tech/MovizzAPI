@@ -1,16 +1,18 @@
 const db = require("../models/index.js");
 const User = db.users;
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 exports.findAll = async (req, res) => {
     try {
-        // if (await User.findOne({ auth_key: req.body.auth_key })) {
+        if (await User.findOne({ id: req.loggedUserId })) {
             let data = await User.find({}, 'id first_name last_name avatar register_date is_locked badge_id xp stats.level').exec();
             res.status(200).json({success: true, msg: data});
-        // } else {
-        //     res.status(401).json({
-        //         success: false, msg: "É necessário estar autenticado para realizar este pedido"
-        //     });
-        // }
+        } else {
+            res.status(401).json({
+                success: false, msg: "É necessário estar autenticado para realizar este pedido"
+            });
+        }
     } catch (err) {
         res.status(500).json({
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
@@ -20,13 +22,10 @@ exports.findAll = async (req, res) => {
 
 exports.findOne = async (req, res) => {
     try {
-        let user = await User.findOne({ auth_key: req.body.auth_key })
-        
-        if (user) {
-    
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        if (userInitiator) {
             if (isInt(req.params.id)) {
                 const userData = await User.findOne({ id: req.params.id });
-                const userInitiator = await User.findOne({ auth_key: req.body.auth_key });
                 if (userData) {
                     // Se o utilizador for administrador ou o id que está a tentar a ser acedido for o mesmo do auth_key mostrar a informação completa
                     if (userInitiator["is_admin"] || userData["id"] == userInitiator["id"]) {
