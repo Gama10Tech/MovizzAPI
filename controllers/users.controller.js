@@ -3,14 +3,14 @@ const User = db.users;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ auth_key: req.body.auth_key })) {
+        // if (await User.findOne({ auth_key: req.body.auth_key })) {
             let data = await User.find({}, 'id first_name last_name avatar register_date is_locked badge_id xp stats.level').exec();
             res.status(200).json({success: true, msg: data});
-        } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
-        }
+        // } else {
+        //     res.status(401).json({
+        //         success: false, msg: "É necessário estar autenticado para realizar este pedido"
+        //     });
+        // }
     } catch (err) {
         res.status(500).json({
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
@@ -60,8 +60,6 @@ exports.create = async (req, res) => {
     const newUser = new User(req.body);
 
     try {
-        let users = await User.findOne({ email: newUser.email });
-
         if (!newUser.email) {
             res.status(400).json({success: false, msg: "O campo email tem de estar preenchido"});
         }
@@ -77,10 +75,10 @@ exports.create = async (req, res) => {
         else if (!newUser.dob) {
             res.status(400).json({success: false, msg: "O campo dob tem de estar preenchido"});
         }
-        else if (users) {
+        else if (await User.findOne({ email: newUser.email })) {
             res.status(422).json({success: false, msg: "O e-mail introduzido já está a ser utilizado"});
         }
-        else{
+        else {
             await newUser.save();
             res.status(201).json({ success: true, msg: "Utilizador registado com sucesso"});
         }
