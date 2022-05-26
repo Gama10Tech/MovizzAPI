@@ -4,6 +4,23 @@ const Quiz = db.quizzes;
 
 exports.findAll = async (req, res) => {
     try {
+        if (req.query.top10 != undefined && req.query.top10 != 'undefined' && req.query.top10 != null) { 
+            if (req.query.top10 == true || req.query.top10 == 'true') {
+                let data = await Quiz.find({}, 'quiz_id title theme_id poster poster_webp difficulty type').limit(10).exec();
+                res.status(200).json({success: true, msg: data});
+            } else {
+                success();
+            }
+        } else {
+            success();
+        }
+    } catch (err) {
+        res.status(500).json({
+            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+        });
+    }
+
+    async function success() {
         if (await User.findOne({ id: req.loggedUserId })) {
             let data = await Quiz.find({}, 'quiz_id title theme_id poster poster_webp difficulty type').exec();
             res.status(200).json({success: true, msg: data});
@@ -12,11 +29,7 @@ exports.findAll = async (req, res) => {
                 success: false, msg: "É necessário estar autenticado para realizar este pedido"
             });
         }
-    } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
-    }
+    };
 };
 
 exports.findOne = async (req, res) => {

@@ -9,7 +9,11 @@ module.exports = (mongoose) => {
                 password: { type: String, required: [true, 'O campo password não pode estar vazio ou ser inválido'] },
                 dob: { type: Date, required: [true, 'O campo dob não pode estar vazio ou ser inválido'] },
                 avatar: { type: String, required: [true, 'O campo avatar não pode estar vazio ou ser inválido'] },
-                badge_id: { type: Number, required: [true, 'O campo badge_id não pode estar vazio ou ser inválido'] },
+                badge_id: { 
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'badge',
+                    required: [true, 'O campo badge_id não pode estar vazio ou ser inválido']
+                },
                 points: { type: Number, required: [true, 'O campo points não pode estar vazio ou ser inválido'] },
                 xp: { type: Number, required: [true, 'O campo xp não pode estar vazio ou ser inválido'] },
                 is_admin: { type: Boolean, required: [true, 'O campo is_admin não pode estar vazio ou ser inválido'] },

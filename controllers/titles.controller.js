@@ -4,19 +4,38 @@ const Title = db.titles;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Title.find({}, 'imdb_id poster poster_webp title imdb_rating genre_id year country').exec();
-            res.status(200).json({success: true, msg: data});
-        } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
+        if (req.query.top10 != undefined && req.query.top10 != 'undefined' && req.query.top10 != null) { 
+            if ((req.query.top10 == true || req.query.top10 == 'true') && (req.query.movie == "true" || req.query.movie == true ) ) {
+                let data = await Title.find({seasons:0}, 'imdb_id poster poster_webp title imdb_rating genre_id year country seasons').limit(10).exec();
+                res.status(200).json({success: true, msg: data});
+            } 
+            else if((req.query.top10 == true || req.query.top10 == 'true') && (req.query.movie == "false" || req.query.movie == false )){
+                let data = await Title.find({seasons:{$ne:0}}, 'imdb_id poster poster_webp title imdb_rating genre_id year country seasons').limit(10).exec();
+                res.status(200).json({success: true, msg: data});
+            }
+            else {
+                success();
+            }
+        }
+        else {
+            success();
         }
     } catch (err) {
         res.status(500).json({
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
         });
     }
+
+    async function success() {
+        if (await User.findOne({ id: req.loggedUserId })) {
+            let data = await Title.find({}, 'imdb_id poster poster_webp title imdb_rating genre_id year country seasons').exec();
+            res.status(200).json({success: true, msg: data});
+        } else {
+            res.status(401).json({
+                success: false, msg: "É necessário estar autenticado para realizar este pedido"
+            });
+        }
+    };
 };
 
 exports.findOne = async (req, res) => {

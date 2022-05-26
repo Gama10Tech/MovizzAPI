@@ -6,7 +6,9 @@ const bcrypt = require("bcryptjs");
 exports.findAll = async (req, res) => {
     try {
         if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await User.find({}, 'id first_name last_name avatar register_date is_locked badge_id xp stats.level').exec();
+            let data = await User.find({}, 'id first_name last_name avatar register_date is_locked badge_id xp stats.level')
+            .populate("badge_id")
+            .exec();
             res.status(200).json({success: true, msg: data});
         } else {
             res.status(401).json({
@@ -31,6 +33,7 @@ exports.findOne = async (req, res) => {
                     if (userInitiator["is_admin"] || userData["id"] == userInitiator["id"]) {
                         let t=await User.find({ id: req.params.id }, 'id register_date first_name last_name email password dob avatar badge_id points xp is_admin is_locked play_history comments title_ratings quiz_ratings seen favorites prizes_reedemed stats')
                         .populate("played")
+                        .populate("badge_id")
                         .populate("seen", "-platforms")
                         .exec();
                         // Mostrar a informação toda
