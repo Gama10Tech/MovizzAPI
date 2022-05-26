@@ -31,9 +31,10 @@ exports.findOne = async (req, res) => {
                 if (userData) {
                     // Se o utilizador for administrador ou o id que está a tentar a ser acedido for o mesmo do auth_key mostrar a informação completa
                     if (userInitiator["is_admin"] || userData["id"] == userInitiator["id"]) {
-                        let t=await User.find({ id: req.params.id }, 'id register_date first_name last_name email password dob avatar badge_id points xp is_admin is_locked play_history comments title_ratings quiz_ratings seen favorites prizes_reedemed stats')
+                        let t=await User.find({ id: req.params.id }, 'id register_date first_name last_name email dob avatar badge_id points xp is_admin is_locked play_history comments title_ratings quiz_ratings seen favourites prizes_reedemed stats')
                         .populate("played")
                         .populate("badge_id")
+                        .populate("favourites", "imdb_id")
                         .populate("seen", "-platforms")
                         .exec();
                         // Mostrar a informação toda
