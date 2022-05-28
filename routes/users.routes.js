@@ -10,6 +10,12 @@ router.route('/')
 
 router.route('/:id')
     .get(authController.verifyToken, userController.findOne)
-    .patch(userController.changeIdFields);
+    .patch(authController.verifyToken, userController.edit);
+
+router.route('/:id/badges')
+    .post(authController.verifyToken, userController.changeBadge);
+
+router.route('/:id/avatar')
+    .post(authController.verifyToken, userController.changeAvatar);
 
 module.exports = router;

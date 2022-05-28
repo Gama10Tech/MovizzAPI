@@ -1,5 +1,6 @@
 const db = require("../models/index.js");
 const User = db.users;
+const Badge = db.badges;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -60,28 +61,37 @@ exports.findOne = async (req, res) => {
 };
 
 exports.create = async (req, res) => {
-    const newUser = new User(req.body);
-
+    req.body = req.body.user;
     try {
-        if (!newUser.email) {
+        if (!req.body.email) {
             res.status(400).json({success: false, msg: "O campo email tem de estar preenchido"});
         }
-        else if (!newUser.first_name) {
+        else if (!req.body.first_name) {
             res.status(400).json({success: false, msg: "O campo first_name tem de estar preenchido"});
         }
-        else if (!newUser.last_name) {
+        else if (!req.body.last_name) {
             res.status(400).json({success: false, msg: "O campo last_name tem de estar preenchido"});
         }
-        else if (!newUser.password) {
+        else if (!req.body.password) {
             res.status(400).json({success: false, msg: "O campo password tem de estar preenchido"});
         }
-        else if (!newUser.dob) {
+        else if (!req.body.dob) {
             res.status(400).json({success: false, msg: "O campo dob tem de estar preenchido"});
         }
-        else if (await User.findOne({ email: newUser.email })) {
+        else if (await User.findOne({ email: req.body.email })) {
             res.status(422).json({success: false, msg: "O e-mail introduzido já está a ser utilizado"});
         }
         else {
+            const highestID = await User.find({}, 'id').sort({ id: -1 }).limit(1).exec();
+            const newUser = new User({
+                "id": parseInt(highestID[0].id) + 1,
+                "first_name": req.body.first_name,
+                "last_name": req.body.last_name,
+                "dob": req.body.dob,
+                "email": req.body.email,
+                "password": req.body.password
+            });
+
             await newUser.save();
             res.status(201).json({ success: true, msg: "Utilizador registado com sucesso"});
         }
@@ -93,14 +103,175 @@ exports.create = async (req, res) => {
     }
 };
 
-exports.changeIdFields=async(req,res)=>{
+exports.changeBadge = async(req, res) => {
     try {
-        res.status(200).json({ success: true, msg: "Ok"});
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de badge_id
+            if (req.body.badge_id) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.badge_id)) {
+                    // Verificar se esse id pertence às medalhas
+                    const newMedal = await Badge.findOne(req.badge_id);
+                    if (newMedal) {
+                        // Permitir logo se o initiator for administrador
+                        if (userInitiator.is_admin) {
+                            success(userTarget);
+                        } else {
+                            // Permitir se o iniator for o próprio alvo
+                            if (userTarget.id == userInitiator.id) {
+                                success(userTarget);
+                            } else {
+                                res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                            }
+                        }
+                    } else {
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhuma medalha" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo badge_id não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo badge_id não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
     } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
     }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {'badge_id':req.body.badge_id}).exec();
+        res.status(201).json({success: true, msg: "Badge do utilizador #" + a.id + " alterada com sucesso para " + req.body.badge_id, location: "/api/users/" + a.id });
+    };
+};
+
+exports.changeAvatar = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.avatar) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.avatar)) {
+                    // Permitir logo se o initiator for administrador
+                    if (userInitiator.is_admin) {
+                        success(userTarget);
+                    } else {
+                        // Permitir se o iniator for o próprio alvo
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {'avatar':req.body.avatar}).exec();
+        res.status(201).json({success: true, msg: "Avatar do utilizador #" + a.id + " alterado com sucesso para " + req.body.avatar, location: "/api/users/" + a.id });
+    };
+};
+
+exports.edit = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        if (userTarget) {
+            // O utilizador tem de ser administrador ou o próprio para executar este pedido
+            if ((userInitiator.is_admin) || (userInitiator.id === userTarget.id)) {
+                if (req.body.first_name) {
+                    if (req.body.last_name) {
+                        if (req.body.email) {
+                            if (req.body.password || req.body.password == "") {
+                                if (req.body.dob) {
+                                    if (req.body.is_admin != null && req.body.is_admin != undefined) {
+                                        if (req.body.is_locked != null && req.body.is_locked != undefined) {
+                                            // Verificar se o email a editar já está a ser utilizado (caso seja o próprio a atualizar)
+                                            const userByEmail = await User.findOne({ email: req.body.email });
+                                            if (userByEmail) {
+                                                if (userInitiator.is_admin) {
+                                                    if (userTarget.id == userByEmail.id) {
+                                                        success(userTarget, req.body, userInitiator);
+                                                    } else {
+                                                        res.status(422).json({ success: false, msg: "O e-mail introduzido já está a ser utilizado" });
+                                                    }
+                                                } else {
+                                                    if (userTarget.id == userInitiator.id) {
+                                                        if (userTarget.id == userByEmail.id) {
+                                                            success(userTarget, req.body, userInitiator);
+                                                        } else {
+                                                            res.status(422).json({ success: false, msg: "O e-mail introduzido já está a ser utilizado" });
+                                                        }
+                                                    } else {
+                                                        res.status(422).json({ success: false, msg: "O e-mail introduzido já está a ser utilizado" });
+                                                    }
+                                                }
+                                            } else {
+                                                success(userTarget, req.body, userInitiator);
+                                            }
+                                        } else {
+                                            res.status(404).json({ success: false, msg: "O campo is_locked não pode estar vazio ou ser inválido" });
+                                        }
+                                    } else {
+                                        res.status(404).json({ success: false, msg: "O campo is_admin não pode estar vazio ou ser inválido" });
+                                    }
+                                } else {
+                                    res.status(404).json({ success: false, msg: "O campo dob não pode estar vazio ou ser inválido" });
+                                }
+                            } else {
+                                res.status(404).json({ success: false, msg: "O campo password não pode estar vazio ou ser inválido" });
+                            }
+                        } else {
+                            res.status(404).json({ success: false, msg: "O campo email não pode estar vazio ou ser inválido" });
+                        }
+                    } else {
+                        res.status(404).json({ success: false, msg: "O campo last_name não pode estar vazio ou ser inválido" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo first_name não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"});
+    }
+
+    async function success(a, b, c) {
+        await User.updateOne({_id: a._id}, {
+            'first_name': b.first_name,
+            'last_name': b.last_name,
+            'email': b.email,
+            'password': b.password == "" ? a.password : b.password,
+            'dob': String(b.dob),
+            'is_admin': c.is_admin ? b.is_admin : a.is_admin,
+            'is_locked': c.is_admin ? b.is_locked : a.is_locked
+        }).exec();
+        res.status(201).json({success: true, msg: "Utilizador #" + a.id + " atualizado com sucesso", location: "/api/users/" + a.id });
+    };
 };
 
 function isInt(value) {

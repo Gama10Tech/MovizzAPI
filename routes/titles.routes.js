@@ -5,7 +5,7 @@ const authController = require("../controllers/auth.controller");
 let router = express.Router();
 
 router.route('/')
-    .get(authController.verifyToken, titleController.findAll)
+    .get(authController.verifyToken, titleController.findAll) // tem várias query strings
     .post(authController.verifyToken, titleController.create);
 
 router.route('/:imdb_id')
