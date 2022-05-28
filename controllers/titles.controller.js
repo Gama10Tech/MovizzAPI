@@ -43,7 +43,7 @@ exports.findOne = async (req, res) => {
         if (await User.findOne({ id: req.loggedUserId })) {
             if (String(req.params.imdb_id).match(/ev\d{7}\/\d{4}(-\d)?|(ch|co|ev|nm|tt)\d{7}/)) {
                 if (await Title.findOne({ imdb_id: req.params.imdb_id })) {
-                    res.status(200).json({success: true, msg: await Title.findOne({ imdb_id: req.params.imdb_id })});
+                    res.status(200).json({success: true, msg: await Title.findOne({ imdb_id: req.params.imdb_id }).populate("comments.user_id").exec()});
                 } else {
                     res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum título" });
                 }
