@@ -46,18 +46,18 @@ module.exports = (mongoose) => {
                 ],
                 seen: [
                     {
-                        title_id: {
+                     
                             type: mongoose.Schema.Types.ObjectId,
                             ref: 'title'
-                        }
+                        
                     }
                 ],
                 favourites: [
                     {
-                        title_id: {
-                            type: mongoose.Schema.Types.ObjectId,
-                            ref: 'title'
-                        }
+                        
+                        type: mongoose.Schema.Types.ObjectId,
+                        ref: 'title'
+                        
                     } 
                 ],
                 prizes_reedemed: [

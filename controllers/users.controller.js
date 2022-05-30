@@ -1,6 +1,7 @@
 const db = require("../models/index.js");
 const User = db.users;
 const Badge = db.badges;
+const Title = db.titles;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -35,9 +36,10 @@ exports.findOne = async (req, res) => {
                         let t=await User.find({ id: req.params.id }, 'id register_date first_name last_name email dob avatar badge_id points xp is_admin is_locked play_history comments title_ratings quiz_ratings seen favourites prizes_reedemed stats')
                         .populate("played")
                         .populate("badge_id")
-                        .populate("favourites", "imdb_id")
+                        .populate("favourites")
                         .populate("seen", "-platforms")
                         .exec();
+                      
                         // Mostrar a informação toda
                         res.status(200).json({success: true, msg: t});
                     } else {
@@ -188,6 +190,287 @@ exports.changeAvatar = async(req, res) => {
     async function success(a) {
         await User.updateOne({_id: a._id}, {'avatar':req.body.avatar}).exec();
         res.status(201).json({success: true, msg: "Avatar do utilizador #" + a.id + " alterado com sucesso para " + req.body.avatar, location: "/api/users/" + a.id });
+    };
+};
+
+exports.addFavourite = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.title) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.title)) {
+                    if (await Title.findOne({ _id: req.body.title })) {
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                    else{
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {$push: {'favourites':req.body.title}}).exec();
+        res.status(201).json({success: true, msg: "Favorito do utilizador #" + a.id + " adicionado com sucesso para " + req.body.title, location: "/api/users/" + a.id });
+    };
+};
+
+exports.removeFavourite = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.title) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.title)) {
+                    if (await Title.findOne({ _id: req.body.title })) {
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                    else{
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {$pull: {'favourites':req.body.title}}).exec();
+        res.status(201).json({success: true, msg: "Favorito do utilizador #" + a.id + " removido com sucesso" });
+    };
+};
+
+exports.addSeen = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.title) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.title)) {
+                    if (await Title.findOne({ _id: req.body.title })) {
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                    else{
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {$push: {'seen':req.body.title}}).exec();
+        res.status(201).json({success: true, msg: "Visto do utilizador #" + a.id + " adicionado com sucesso para " + req.body.title, location: "/api/users/" + a.id });
+    };
+};
+
+exports.removeSeen = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.title) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.title)) {
+                    if (await Title.findOne({ _id: req.body.title })) {
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                    else{
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {$pull: {'seen':req.body.title}}).exec();
+        res.status(201).json({success: true, msg: "Visto do utilizador #" + a.id + " removido com sucesso" });
+    };
+};
+
+exports.addRating = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.title) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.title)) {
+                    if (await Title.findOne({ _id: req.body.title })) {
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                    else{
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {$push: {'seen':req.body.title}}).exec();
+        res.status(201).json({success: true, msg: "Visto do utilizador #" + a.id + " adicionado com sucesso para " + req.body.title, location: "/api/users/" + a.id });
+    };
+};
+
+//Fiquei aqui
+exports.editRating = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.title) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.title)) {
+                    if (await Title.findOne({ _id: req.body.title })) {
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                    else{
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {$pull: {'seen':req.body.title}}).exec();
+        res.status(201).json({success: true, msg: "Visto do utilizador #" + a.id + " removido com sucesso" });
+    };
+};
+
+exports.removeRating = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        // Verificar se o id do alvo é válido
+        if (userTarget) {
+            // Verificar se vem algum objeto no body com o nome de avatar
+            if (req.body.title) {
+                // Verificar se esse objeto tem um campo válido
+                if (String(req.body.title)) {
+                    if (await Title.findOne({ _id: req.body.title })) {
+                        if (userTarget.id == userInitiator.id) {
+                            success(userTarget);
+                        } else {
+                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
+                        }
+                    }
+                    else{
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+
+    async function success(a) {
+        await User.updateOne({_id: a._id}, {$pull: {'seen':req.body.title}}).exec();
+        res.status(201).json({success: true, msg: "Visto do utilizador #" + a.id + " removido com sucesso" });
     };
 };
 

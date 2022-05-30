@@ -5,7 +5,6 @@ const bcrypt = require("bcryptjs");
 
 exports.login = async (req, res) => {
     try {
-        console.log(req.body);
         if (req.body.email) {
             if (req.body.password) {
                 const userData = await User.findOne({ $and: [ { email: req.body.email }, { password: req.body.password  } ] })
@@ -51,7 +50,13 @@ exports.verifyToken = async (req, res, next) => {
     try {
         let decoded = jwt.verify(token, db.secret);
         req.loggedUserId = decoded.id;
-        next();
+        if (await User.findOne({ id: req.loggedUserId })) {
+            next();
+        } else {
+            res.status(401).json({
+                success: false, msg: "É necessário estar autenticado para realizar este pedido"
+            });
+        }
     } catch (err) {
         return res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });
     }

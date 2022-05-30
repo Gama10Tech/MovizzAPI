@@ -12,4 +12,7 @@ router.route('/:imdb_id')
     .get(authController.verifyToken, titleController.findOne)
     .delete(authController.verifyToken, titleController.deleteByImdbId);
 
+router.route('/:imdb_id/comment')
+    .delete(authController.verifyToken, titleController.deleteComment);
+
 module.exports = router;
