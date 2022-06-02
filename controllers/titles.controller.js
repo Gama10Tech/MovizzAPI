@@ -82,40 +82,46 @@ exports.deleteByImdbId=async(req,res)=>{
 
 exports.deleteComment = async(req, res) => {
     try {
-        const userInitiator = await User.findOne({ id: req.loggedUserId });
-        const userTarget = await User.findOne({ id: req.params.id });
-
-        // Verificar se o id do alvo é válido
-        if (userTarget) {
-            // Verificar se vem algum objeto no body com o nome de avatar
-            if (req.body.title) {
-                // Verificar se esse objeto tem um campo válido
-                if (String(req.body.title)) {
-                    if (await Title.findOne({ _id: req.body.title })) {
-                        if (userTarget.id == userInitiator.id) {
-                            success(userTarget);
-                        } else {
-                            res.status(401).json({success: false, msg: "É necessário ter permissões para realizar este pedido"});
-                        }
-                    }
-                    else{
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
-                    }
-                } else {
-                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
-                }
-            } else {
-                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+        if (String(req.body._id)) {
+            if (await Title.findOne({ _id: req.body._id_title })) {
+                    await Title.updateOne({_id: req.body._id_title}, { $pull: { comments: { _id:  req.body._id_comment} } }).exec();
+                    res.status(201).json({success: true, msg: "Comentário do utilizador #" + req.body._id_comment + " removido com sucesso" });
+            }
+            else{
+                res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "O campo _id não pode estar vazio ou ser inválido" });
         }
     } catch (err) {
         res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
     }
+};
 
-    async function success(a) {
-        await User.updateOne({_id: a._id}, {$pull: {'comments':req.body.title}}).exec();
-        res.status(201).json({success: true, msg: "Comentário do utilizador #" + a.id + " removido com sucesso" });
-    };
+exports.createComment=async(req,res)=>{
+    try {
+ 
+        if (req.body.title_id && req.body.user_id && req.body.comment && String(req.body.spoiler)) {
+
+            let x=await Title.findOne({ _id: req.body.title_id })
+            if (x) {
+                const location= x.comments.length==0 ? 0 : Math.max(...x.comments.map(a => a.id))+1
+                let t= await Title.findOneAndUpdate({_id: req.body.title_id}, {$push: {comments: {
+                    id: location,
+                    user_id:req.body.user_id,
+                    comment:req.body.comment,
+                    date:new Date(),
+                    spoiler: req.body.spoiler
+                }}}).exec();
+                res.status(201).json({success: true, msg: "Comment do utilizador #" + req.body.user_id + " adicionado com sucesso ", location:location});
+            }
+            else{
+                res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "Os campos não podem estar vazios ou ser inválidos" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
 };

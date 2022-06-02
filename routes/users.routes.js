@@ -26,9 +26,10 @@ router.route('/:id/seen')
     .post(authController.verifyToken, userController.addSeen)
     .delete(authController.verifyToken, userController.removeSeen);
 
-router.route('/:id/rating')
+router.route('/:id/rating/:id_imdb')
+    .get(authController.verifyToken, userController.findRating)
     .post(authController.verifyToken, userController.addRating)
-    .patch(authController.verifyToken, userController.editRating)
+    .patch(authController.verifyToken, userController.changeRating)
     .delete(authController.verifyToken, userController.removeRating);
 
 module.exports = router;
