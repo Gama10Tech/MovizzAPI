@@ -15,8 +15,22 @@ module.exports = (mongoose) => {
                 content_rating: { type: String, required: [true, 'O campo content_rating não pode estar vazio ou ser inválido'] },
                 duration: { type: String, required: [true, 'O campo duration não pode estar vazio ou ser inválido'] },
                 seasons: { type: Number, required: [true, 'O campo seasons não pode estar vazio ou ser inválido'] },
-                platforms: [],
-                genre: [],
+                platforms: [
+                    { 
+                        platform_id: {
+                            type: mongoose.Schema.Types.ObjectId,
+                            ref: 'platform'
+                        },
+                    }
+                ],
+                genres: [
+                    { 
+                        genre_id: {
+                            type: mongoose.Schema.Types.ObjectId,
+                            ref: 'genre'
+                        },
+                    }
+                ],
                 episodes: [
                     {
                         imdb_id: String,
