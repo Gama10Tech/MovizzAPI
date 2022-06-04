@@ -4,9 +4,10 @@ const User = db.users;
 
 exports.findAll = async (req, res) => {
     try {
+        
         if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Prize.find().exec();
-            res.status(200).json({ success: true, msg: data });
+                let data = await Prize.find().exec();
+                res.status(200).json({ success: true, msg: data });
         } else {
             res.status(401).json({
                 success: false, msg: "É necessário estar autenticado para realizar este pedido"
@@ -68,7 +69,24 @@ exports.removePrizeById=async(req,res)=>{
 
 exports.create=async(req,res)=>{
     try {
-        res.status(200).json({ success: true, msg: "Ok"});
+        let user=await User.findOne({ id: req.loggedUserId })
+        if (user) {
+            const prize = await Prize.findOne({ _id: req.body.prize_id }).exec();
+            if (prize === null)
+                return res.status(404).json({
+                    success: false, msg: "O id especificado não pertence a nenhum prémio"
+            });
+            else{
+                let price=user.points-prize.price
+                const a= await User.findOneAndUpdate({ id: req.loggedUserId }, {$push:{prizes_reedemed:{prize_id:req.body.prize_id, date:new Date()}},points:price}).exec();
+                res.status(201).json({success: true, msg: "Premio do utilizador #" +  req.loggedUserId + " redimido com sucesso ", price:price});
+            }
+            
+        } else {
+            res.status(401).json({
+                success: false, msg: "É necessário estar autenticado para realizar este pedido"
+            });
+        }
     } catch (err) {
         res.status(500).json({
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
