@@ -2,6 +2,8 @@ const db = require("../models/index.js");
 const User = db.users;
 const Badge = db.badges;
 const Title = db.titles;
+const Quiz = db.quizzes;
+const Prize = db.prizes;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
@@ -35,8 +37,8 @@ exports.findOne = async (req, res) => {
             if (userData) {
                 // Se o utilizador for administrador ou o id que está a tentar a ser acedido for o mesmo do auth_key mostrar a informação completa
                 if (userInitiator["is_admin"] || userData["id"] == userInitiator["id"]) {
-                    let t = await User.find({ id: req.params.id }, 'id register_date first_name last_name email dob avatar badge_id points xp is_admin is_locked play_history comments title_ratings quiz_ratings seen favourites prizes_reedemed stats')
-                        .populate("played")
+                    let t = await User.find({ id: req.params.id }, 'id register_date first_name last_name email dob avatar badge_id points xp is_admin is_locked played title_ratings quiz_ratings seen favourites prizes_reedemed stats')
+                        .populate("played.quiz_id", "-questions -comments")
                         .populate("badge_id")
                         .populate("favourites", "imdb_id")
                         .populate("seen", "-platforms")
@@ -350,7 +352,6 @@ exports.removeSeen = async (req, res) => {
     };
 };
 
-//Fiquei aqui
 exports.findRating = async (req, res) => {
     try {
         const userInitiator = await User.findOne({ id: req.loggedUserId });
@@ -537,25 +538,25 @@ exports.edit = async (req, res) => {
                                                 success(userTarget, req.body, userInitiator);
                                             }
                                         } else {
-                                            res.status(404).json({ success: false, msg: "O campo is_locked não pode estar vazio ou ser inválido" });
+                                            res.status(400).json({ success: false, msg: "O campo is_locked não pode estar vazio ou ser inválido" });
                                         }
                                     } else {
-                                        res.status(404).json({ success: false, msg: "O campo is_admin não pode estar vazio ou ser inválido" });
+                                        res.status(400).json({ success: false, msg: "O campo is_admin não pode estar vazio ou ser inválido" });
                                     }
                                 } else {
-                                    res.status(404).json({ success: false, msg: "O campo dob não pode estar vazio ou ser inválido" });
+                                    res.status(400).json({ success: false, msg: "O campo dob não pode estar vazio ou ser inválido" });
                                 }
                             } else {
-                                res.status(404).json({ success: false, msg: "O campo password não pode estar vazio ou ser inválido" });
+                                res.status(400).json({ success: false, msg: "O campo password não pode estar vazio ou ser inválido" });
                             }
                         } else {
-                            res.status(404).json({ success: false, msg: "O campo email não pode estar vazio ou ser inválido" });
+                            res.status(400).json({ success: false, msg: "O campo email não pode estar vazio ou ser inválido" });
                         }
                     } else {
-                        res.status(404).json({ success: false, msg: "O campo last_name não pode estar vazio ou ser inválido" });
+                        res.status(400).json({ success: false, msg: "O campo last_name não pode estar vazio ou ser inválido" });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo first_name não pode estar vazio ou ser inválido" });
+                    res.status(400).json({ success: false, msg: "O campo first_name não pode estar vazio ou ser inválido" });
                 }
             } else {
                 res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
@@ -579,6 +580,176 @@ exports.edit = async (req, res) => {
         }).exec();
         res.status(201).json({ success: true, msg: "Utilizador #" + a.id + " atualizado com sucesso", location: "/api/users/" + a.id });
     };
+};
+
+exports.addQuizAttempt = async (req, res) => {
+    const userInitiator = await User.findOne({ id: req.loggedUserId });
+    const userTarget = await User.findOne({ id: req.params.id });
+    
+    try {
+        if (userTarget) {
+            if (!req.body.quiz_id.toString()) {
+                res.status(404).json({ success: false, msg: "O campo quiz_id não pode estar vazio ou ser inválido" });
+            } else if (!req.body.questions_right.toString()) {
+                res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
+            } else if (!req.body.questions_wrong.toString()) {
+                res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
+            } else if (!req.body.allowed_points.toString()) {
+                res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
+            } else if (!req.body.was_completed.toString()) {
+                res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
+            } else {
+                const quizData = await Quiz.findOne({ _id: req.body.quiz_id });
+                if (quizData) {
+                    if (userTarget._id.toString() == userInitiator._id.toString()) {
+                        userTarget.played.push({
+                            quiz_id: req.body.quiz_id,
+                            date: new Date(),
+                            questions_right: req.body.questions_right,
+                            questions_wrong: req.body.questions_wrong,
+                            allowed_points: req.body.allowed_points,
+                            was_completed: req.body.was_completed
+                        });
+                        await userTarget.save();
+                        await userTarget.populate("played.quiz_id", "-questions -comments").execPopulate();
+                        res.status(201).json({ success: true, msg: "Tentativa de quiz registada com sucesso", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[userTarget.played.length - 1]._id, data: userTarget.played[userTarget.played.length - 1] });
+                    } else {
+                        res.status(401).json({ success: false, msg: "Não tem permissões para realizar este pedido" });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum quiz" });
+                }
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+};
+
+exports.updateQuizAttempt = async (req, res) => {
+    const userInitiator = await User.findOne({ id: req.loggedUserId });
+    const userTarget = await User.findOne({ id: req.params.id });
+    
+    try {
+        if (userTarget) {
+            if (!req.body.questions_right.toString()) {
+                res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
+            } else if (!req.body.questions_wrong.toString()) {
+                res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
+            } else if (!req.body.allowed_points.toString()) {
+                res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
+            } else if (!req.body.was_completed.toString()) {
+                res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
+            } else {
+                if (userTarget._id.toString() == userInitiator._id.toString()) {
+                    const gameIdx = userTarget.played.findIndex(game => game._id.toString() == req.params.played_id.toString())
+                    console.log(gameIdx);
+                    if (gameIdx != -1) {
+                        userTarget.played[gameIdx].questions_right = req.body.questions_right;
+                        userTarget.played[gameIdx].questions_wrong = req.body.questions_wrong;
+                        userTarget.played[gameIdx].allowed_points = req.body.allowed_points;
+                        userTarget.played[gameIdx].was_completed = req.body.was_completed;
+                        userTarget.played[gameIdx].date = new Date();
+                        await userTarget.save();
+                        await userTarget.populate("played.quiz_id", "-questions -comments").execPopulate();
+                        res.status(201).json({ success: true, msg: "Tentativa de quiz atualizada com sucesso", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[gameIdx]._id, data: userTarget.played[gameIdx] });
+                    } else {
+                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum jogo jogado" });
+                    }
+                } else {
+                    res.status(401).json({ success: false, msg: "Não tem permissões para realizar este pedido" });
+                }
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+};
+
+exports.addPoints = async (req, res) => {
+    const userTarget = await User.findOne({ id: req.params.id });
+    try {
+        if (userTarget) {
+            if (req.body.points.toString()) {
+                if (isInt(req.body.points)) {
+                    userTarget.points = userTarget.points + req.body.points;
+                    await userTarget.save();
+                    res.status(201).json({ success: true, msg: "Pontos do utilizador #" + userTarget.id + " atualizado com sucesso", location: "/api/users/" + userTarget.id });
+                } else {
+                    res.status(400).json({ success: false, msg: "O campo points não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(400).json({ success: false, msg: "O campo points não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+};
+
+exports.addXP = async (req, res) => {
+    const userTarget = await User.findOne({ id: req.params.id });
+    try {
+        if (userTarget) {
+            if (req.body.xp.toString()) {
+                if (isInt(req.body.xp)) {
+                    let didUserLevelUp = false;
+                    userTarget.xp = userTarget.xp + req.body.xp;
+                    
+                    if (Math.floor(userTarget.xp / 150) != parseInt(userTarget.stats.level)) {
+                        didUserLevelUp = true;
+                        userTarget.stats.level = userTarget.stats.level + 1;
+                    }
+
+                    await userTarget.save();
+                    res.status(201).json({ success: true, msg: "XP do utilizador #" + userTarget.id + " atualizado com sucesso", location: "/api/users/" + userTarget.id, passed_level: didUserLevelUp });
+                } else {
+                    res.status(400).json({ success: false, msg: "O campo xp não pode estar vazio ou ser inválido" });
+                }
+            } else {
+                res.status(400).json({ success: false, msg: "O campo xp não pode estar vazio ou ser inválido" });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+};
+
+exports.reedemPrize = async (req, res) => {
+    const userTarget = await User.findOne({ id: req.params.id });
+    try {
+        if (req.body.prize_id.toString()) {
+            const prize = await Prize.findOne({ _id: req.body.prize_id.toString() }).exec();
+            if (prize === null) {
+                return res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum prémio" });
+            } else {
+                if (userTarget.points - prize.price >= 0) {
+                    userTarget.points = userTarget.points - prize.price;
+                    userTarget.prizes_reedemed.push({
+                        prize_id: req.body.prize_id,
+                        date: new Date()
+                    });
+                    await userTarget.save();
+                    await userTarget.populate("prizes_reedemed.prize_id").execPopulate();
+                    res.status(201).json({success: true, msg: "Prémio do utilizador #" +  userTarget.id + " redimido com sucesso ", data: userTarget.prizes_reedemed[userTarget.prizes_reedemed.length - 1] });
+                } else {
+                    res.status(406).json({ success: false, msg: "O utilizador não possui fundos insuficientes" });
+                }
+            }
+        } else {
+            res.status(400).json({ success: false, msg: "O campo prize_id não pode estar vazio ou ser inválido" });
+        }       
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
 };
 
 function isInt(value) {

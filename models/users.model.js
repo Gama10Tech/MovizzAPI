@@ -23,7 +23,12 @@ module.exports = (mongoose) => {
                         quiz_id: { 
                             type: mongoose.Schema.Types.ObjectId,
                             ref: 'quiz'
-                        }
+                        },
+                        date: { type: Date, default: new Date() },
+                        questions_right: { type: Number, default: 0 },
+                        questions_wrong: { type: Number, default: 0 },
+                        allowed_points: { type: Boolean, default: false },
+                        was_completed: { type: Boolean, default: false }
                     }                        
                 ],
                 quiz_ratings: [
@@ -66,10 +71,7 @@ module.exports = (mongoose) => {
                             type: mongoose.Schema.Types.ObjectId,
                             ref: 'prize'
                         },
-                        date: {
-                            type: Date,
-                            default: new Date()
-                        }
+                        date: { type: Date, default: new Date() }
                     } 
                 ],
                 stats: {

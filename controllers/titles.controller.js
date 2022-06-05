@@ -33,28 +33,43 @@ exports.findAll = async (req, res) => {
 
     async function success() {
         if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Title.find({}, 'imdb_id poster poster_webp title imdb_rating genre_id year country seasons').lean().exec();
-            for (let k = 0; k < data.length; k++) {
-                let ratings = await User.find({ "title_ratings.title_id": { $eq: data[k]._id } }).exec();
-                let sum = 0.0;
-                let total = 0;
+            if (req.query.navbar != undefined && (req.query.navbar == true || req.query.navbar == 'true')) {
+                let data = await Title.find({}, 'imdb_id poster poster_webp title seasons').exec();
+                res.status(200).json({success: true, msg: data});
+            } else {
+                let data = await Title.find({}, 'imdb_id poster poster_webp title imdb_rating genres year country seasons').populate("genres.genre_id").lean().exec();
+                let userWithRatings = await User.find({ title_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
+                let userWithSeen = await User.find({ seen: { $exists: true, $not: {$size: 0} } }).lean().exec();
 
-                if (ratings.length > 0) {
-                    for (let i = 0; i < ratings.length; i++) {
-                        for (let j = 0; j < ratings[i].title_ratings.length; j++) {
-                            if (String(ratings[i].title_ratings[j].title_id) == String(data[k]._id)) {
-                                sum += parseInt(ratings[i].title_ratings[j].rating);
-                                total += 1;
+                let k = 0, len = data.length;
+                while (k < len) {
+                    let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0, times_seen = 0;
+                    while (i < len1) {
+                        let j = 0, len2 = userWithRatings[i].title_ratings.length;
+                        while (j < len2) {
+                            if (userWithRatings[i].title_ratings[j].title_id.toString() == data[k]._id.toString()) {
+                                quant++;
+                                sum += userWithRatings[i].title_ratings[j].rating;
+                                userWithRatings[i].title_ratings.splice(j, 1);
                                 break;
-                            }
-                        }
+                            } j++
+                        } i++;
+                    } i = 0, len1 = userWithSeen.length;
+                    while (i < len1) {
+                        let j = 0, len2 = userWithSeen[i].seen.length;
+                        while (j < len2) {
+                            if (userWithSeen[i].seen[j].toString() == data[k]._id.toString()) {
+                                times_seen++;
+                                userWithSeen[i].seen.splice(j, 1);
+                                break;
+                            } j++
+                        } i++;
                     }
-                    data[k].movizz_rating = sum / total;
-                } else {
-                    data[k].movizz_rating = 0.0;
-                }
+                    data[k].movizz_rating = quant > 0 ? sum / quant : 0.0;
+                    data[k].times_seen = times_seen;
+                    k++;
+                } res.status(200).json({success: true, msg: data});
             }
-            res.status(200).json({success: true, msg: data});
         } else {
             res.status(401).json({
                 success: false, msg: "É necessário estar autenticado para realizar este pedido"
@@ -85,6 +100,7 @@ exports.findOne = async (req, res) => {
                                 if (String(ratings[i].title_ratings[j].title_id) == String(result._id)) {
                                     sum += parseInt(ratings[i].title_ratings[j].rating);
                                     total += 1;
+                                    break;
                                 }
                             }
                         }
@@ -105,7 +121,6 @@ exports.findOne = async (req, res) => {
             res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido"});
         }
     } catch (err) {
-        console.log(err);
         res.status(500).json({
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
         });

@@ -12,8 +12,23 @@ router.route('/:id')
     .get(authController.verifyToken, userController.findOne)
     .patch(authController.verifyToken, userController.edit);
 
+router.route('/:id/points')
+    .post(authController.verifyToken, userController.addPoints);
+
+router.route('/:id/xp')
+    .post(authController.verifyToken, userController.addXP);
+
 router.route('/:id/badges')
     .post(authController.verifyToken, userController.changeBadge);
+
+router.route('/:id/played')
+    .post(authController.verifyToken, userController.addQuizAttempt);
+
+router.route('/:id/prizes_reedemed')
+    .post(authController.verifyToken, userController.reedemPrize);
+
+router.route('/:id/played/:played_id')
+    .patch(authController.verifyToken, userController.updateQuizAttempt);
 
 router.route('/:id/avatar')
     .post(authController.verifyToken, userController.changeAvatar);

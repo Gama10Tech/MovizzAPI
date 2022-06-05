@@ -6,8 +6,7 @@ exports.findAll = async (req, res) => {
     try {
         if (req.query.top10 != undefined && req.query.top10 != 'undefined' && req.query.top10 != null) { 
             if (req.query.top10 == true || req.query.top10 == 'true') {
-                let data = await Quiz.find({}, 'quiz_id title theme_id poster poster_webp difficulty type').limit(10).exec();
-                res.status(200).json({success: true, msg: data});
+                success(true);
             } else {
                 success();
             }
@@ -20,14 +19,32 @@ exports.findAll = async (req, res) => {
         });
     }
 
-    async function success() {
+    async function success(top) {
         if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Quiz.find({}, 'quiz_id title theme_id poster poster_webp difficulty type').exec();
-            res.status(200).json({success: true, msg: data});
+            let data = await Quiz.find({}, 'quiz_id title theme_id poster poster_webp difficulty type theme_id times_played').populate("theme_id").lean().exec();
+
+            let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
+            let k = 0, len = data.length;
+            while (k < len) {
+                let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
+                while (i < len1) {
+                    let j = 0, len2 = userWithRatings[i].quiz_ratings.length;
+                    while (j < len2) {
+                        if (userWithRatings[i].quiz_ratings[j].quiz_id.toString() == data[k]._id.toString()) {
+                            quant++;
+                            sum += userWithRatings[i].quiz_ratings[j].rating;
+                            userWithRatings[i].quiz_ratings.splice(j, 1);
+                            break;
+                        } j++
+                    } i++;
+                }
+                data[k].quizz_rating = quant > 0 ? sum / quant : 0.0;
+                k++;
+            }
+
+            res.status(200).json({success: true, msg: top ? data.sort((a, b) => a.quizz_rating < b.quizz_rating && 1 || -1).slice(0, 11) : data});
         } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
+            res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });
         }
     };
 };
@@ -36,7 +53,22 @@ exports.findOne = async (req, res) => {
     try {
         if (await User.findOne({ id: req.loggedUserId })) {
             if (isInt(req.params.quiz_id)) {
-                const data = await Quiz.findOne({ quiz_id: req.params.quiz_id });
+                let data = await Quiz.findOne({ quiz_id: req.params.quiz_id }).lean().exec();
+
+                let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
+                let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
+                while (i < len1) {
+                    let j = 0, len2 = userWithRatings[i].quiz_ratings.length;
+                    while (j < len2) {
+                        if (userWithRatings[i].quiz_ratings[j].quiz_id.toString() == data._id.toString()) {
+                            quant++;
+                            sum += userWithRatings[i].quiz_ratings[j].rating;
+                            break;
+                        } j++
+                    } i++;
+                }
+                data.quizz_rating = quant > 0 ? sum / quant : 0.0;
+
                 if (data) {
                     res.status(200).json({ success: true, msg: data });
                 } else {
@@ -55,7 +87,7 @@ exports.findOne = async (req, res) => {
     }
 };
 
-exports.create=async(req,res)=>{
+exports.create = async(req, res) => {
     try {
         res.status(200).json({ success: true, msg: "Ok"});
     } catch (err) {
@@ -65,7 +97,7 @@ exports.create=async(req,res)=>{
     }
 }
 
-exports.alterQuizById=async(req,res)=>{
+exports.alterQuizById = async(req, res) => {
     try {
         res.status(200).json({ success: true, msg: "Ok"});
     } catch (err) {
@@ -75,7 +107,7 @@ exports.alterQuizById=async(req,res)=>{
     }
 }
 
-exports.removeQuizById=async(req,res)=>{
+exports.removeQuizById = async(req, res) => {
     try {
         res.status(200).json({ success: true, msg: "Ok"});
     } catch (err) {

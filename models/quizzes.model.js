@@ -13,7 +13,7 @@ module.exports = (mongoose) => {
                 is_specific: { type: Boolean, required: [true, 'O campo is_specific não pode estar vazio ou ser inválido'] },
                 title: { type: String, required: [true, 'O campo title não pode estar vazio ou ser inválido'] },
                 description: { type: String, required: [true, 'O campo description não pode estar vazio ou ser inválido'] },
-                theme_id: { type: String, required: [true, 'O campo theme_id não pode estar vazio ou ser inválido'] },
+                theme_id: { type: mongoose.Schema.Types.ObjectId, ref: 'theme' },
                 poster: { type: String, required: [true, 'O campo poster não pode estar vazio ou ser inválido'] },
                 poster_webp: { type: String, required: [true, 'O campo poster_webp não pode estar vazio ou ser inválido'] },
                 banner: { type: String, required: [true, 'O campo banner não pode estar vazio ou ser inválido'] },
