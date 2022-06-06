@@ -42,20 +42,16 @@ exports.login = async (req, res) => {
 exports.verifyToken = async (req, res, next) => {
     const header = req.headers['x-access-token'] || req.headers.authorization || req.headers.Authorization;
     if (typeof header == 'undefined') {
-        return res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });
+        res.status(401).json({ success: false, msg: "You are not authorized to make this request, please make sure you are correctly signed in." });
     }
-
     const token = header.split(' ')[1];
-
     try {
         let decoded = jwt.verify(token, db.secret);
         req.loggedUserId = decoded.id;
         if (await User.findOne({ id: req.loggedUserId })) {
             next();
         } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
+            res.status(401).json({ success: false, msg: "You are not authorized to make this request, please make sure you are correctly signed in." });
         }
     } catch (err) {
         return res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });

@@ -1,4 +1,5 @@
 const db = require("../models/index.js");
+const calculateRating = require("../controllers/quizzes.controller").calculateRating;
 const User = db.users;
 const Badge = db.badges;
 const Title = db.titles;
@@ -352,14 +353,12 @@ exports.removeSeen = async (req, res) => {
     };
 };
 
-exports.findRating = async (req, res) => {
+exports.findTitleRating = async (req, res) => {
     try {
         const userInitiator = await User.findOne({ id: req.loggedUserId });
         const userTarget = await User.findOne({ _id: req.params.id });
-        // // Verificar se o id do alvo é válido
+        // Verificar se o id do alvo é válido
         if (userTarget) {
-            // Verificar se vem algum objeto no body com o nome de avatar
-
             // Verificar se esse objeto tem um campo válido
             let x = await Title.findOne({ imdb_id: req.params.id_imdb })
             if (x) {
@@ -385,7 +384,7 @@ exports.findRating = async (req, res) => {
     }
 };
 
-exports.addRating = async (req, res) => {
+exports.addTitleRating = async (req, res) => {
     try {
 
         const userInitiator = await User.findOne({ id: req.loggedUserId });
@@ -424,7 +423,7 @@ exports.addRating = async (req, res) => {
     }
 };
 
-exports.changeRating = async (req, res) => {
+exports.changeTitleRating = async (req, res) => {
     try {
 
         const userInitiator = await User.findOne({ id: req.loggedUserId });
@@ -464,7 +463,7 @@ exports.changeRating = async (req, res) => {
     }
 };
 
-exports.removeRating = async (req, res) => {
+exports.removeTitleRating = async (req, res) => {
     try {
         const userInitiator = await User.findOne({ id: req.loggedUserId });
         const userTarget = await User.findOne({ _id: req.params.id });
@@ -496,6 +495,129 @@ exports.removeRating = async (req, res) => {
         }
     } catch (err) {
         res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+};
+
+exports.addQuizRating = async (req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId }); // This will always be available
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        if (userTarget) {
+            if (!req.body.quiz_id.toString()) {
+                res.status(400).json({ success: false, msg: "The field 'quiz_id' cannot be empty or invalid." });
+            } else if (!req.body.rating.toString()) {
+                res.status(400).json({ success: false, msg: "The field 'rating' cannot be empty or invalid." });
+            } else if (!isInt(req.body.rating)) {
+                res.status(400).json({ success: false, msg: "The field 'rating' cannot be empty or invalid." });
+            } else {
+                const quizData = await Quiz.findOne({ quiz_id: req.body.quiz_id }).exec();
+                if (quizData) {
+                    if (userInitiator.id.toString() == userTarget.id.toString()) {
+                        userTarget.quiz_ratings.push({
+                            quiz_id: quizData._id,
+                            rating: parseInt(req.body.rating)
+                        });
+                        await userTarget.save();
+                        const newAverage = await calculateRating(quizData._id);
+                        res.status(201).json({
+                            success: true,
+                            msg: "Rating for the quiz ID " + quizData.quiz_id + " added successfully.",
+                            location: "/api/users/" + userTarget.id + "/quiz_ratings/" + userTarget.quiz_ratings[userTarget.quiz_ratings.length - 1]._id,
+                            data: userTarget.quiz_ratings[userTarget.quiz_ratings.length - 1],
+                            average: newAverage
+                        });
+                    } else {
+                        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
+                }
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+    }
+};
+
+exports.changeQuizRating = async (req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId }); // This will always be available
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        if (userTarget) {
+            if (!req.body.rating.toString()) {
+                res.status(400).json({ success: false, msg: "The field 'rating' cannot be empty or invalid." });
+            } else if (!isInt(req.body.rating)) {
+                res.status(400).json({ success: false, msg: "The field 'rating' cannot be empty or invalid." });
+            } else {
+                const quizData = await Quiz.findOne({ quiz_id: req.params.quiz_id }).exec();
+                if (quizData) {
+                    if (userInitiator.id.toString() == userTarget.id.toString()) {
+                        const ratingIdx = userTarget.quiz_ratings.findIndex(rating => rating.quiz_id.toString() == quizData._id.toString());
+                        if (ratingIdx != -1) {
+                            userTarget.quiz_ratings[ratingIdx].rating = parseInt(req.body.rating);
+                            await userTarget.save();
+                            const newAverage = await calculateRating(quizData._id);
+                            res.status(200).json({
+                                success: true,
+                                msg: "Rating for the quiz ID " + quizData.quiz_id + " updated successfully.",
+                                location: "/api/users/" + userTarget.id + "/quiz_ratings/" + userTarget.quiz_ratings[ratingIdx]._id,
+                                average: newAverage
+                            });
+                        } else {
+                            res.status(404).json({ success: false, msg: "No rating for that quiz was found." });
+                        }
+                    } else {
+                        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
+                    }
+                } else {
+                    res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
+                }
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+    }
+};
+
+exports.removeQuizRating = async (req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId }); // This will always be available
+        const userTarget = await User.findOne({ id: req.params.id });
+
+        if (userTarget) {
+            const quizData = await Quiz.findOne({ quiz_id: req.params.quiz_id }).exec();
+            if (quizData) {
+                if (userInitiator.id.toString() == userTarget.id.toString()) {
+                    const ratingIdx = userTarget.quiz_ratings.findIndex(rating => rating.quiz_id.toString() == quizData._id.toString());
+                    if (ratingIdx != -1) {
+                        userTarget.quiz_ratings.splice(ratingIdx, 1);
+                        await userTarget.save();
+                        const newAverage = await calculateRating(quizData._id);
+                        res.status(200).json({
+                            success: true,
+                            msg: "Rating for the quiz ID " + quizData.quiz_id + " removed successfully.",
+                            average: newAverage
+                        });
+                    } else {
+                        res.status(404).json({ success: false, msg: "No rating for that quiz was found." });
+                    }
+                } else {
+                    res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
+            }
+        } else {
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -610,8 +732,13 @@ exports.addQuizAttempt = async (req, res) => {
                             allowed_points: req.body.allowed_points,
                             was_completed: req.body.was_completed
                         });
+
+                        quizData.times_played = quizData.times_played + 1;
+                        await quizData.save();
+
                         await userTarget.save();
                         await userTarget.populate("played.quiz_id", "-questions -comments").execPopulate();
+
                         res.status(201).json({ success: true, msg: "Tentativa de quiz registada com sucesso", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[userTarget.played.length - 1]._id, data: userTarget.played[userTarget.played.length - 1] });
                     } else {
                         res.status(401).json({ success: false, msg: "Não tem permissões para realizar este pedido" });
@@ -645,13 +772,19 @@ exports.updateQuizAttempt = async (req, res) => {
             } else {
                 if (userTarget._id.toString() == userInitiator._id.toString()) {
                     const gameIdx = userTarget.played.findIndex(game => game._id.toString() == req.params.played_id.toString())
-                    console.log(gameIdx);
                     if (gameIdx != -1) {
                         userTarget.played[gameIdx].questions_right = req.body.questions_right;
                         userTarget.played[gameIdx].questions_wrong = req.body.questions_wrong;
                         userTarget.played[gameIdx].allowed_points = req.body.allowed_points;
                         userTarget.played[gameIdx].was_completed = req.body.was_completed;
                         userTarget.played[gameIdx].date = new Date();
+
+                        if (req.body.was_completed.toString() == "true") {
+                            userTarget.stats.quizzes_completed = userTarget.stats.quizzes_completed + 1;
+                        }
+                        userTarget.stats.questions_right = userTarget.stats.questions_right + req.body.questions_right;
+                        userTarget.stats.questions_wrong = userTarget.stats.questions_wrong + req.body.questions_wrong;
+
                         await userTarget.save();
                         await userTarget.populate("played.quiz_id", "-questions -comments").execPopulate();
                         res.status(201).json({ success: true, msg: "Tentativa de quiz atualizada com sucesso", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[gameIdx]._id, data: userTarget.played[gameIdx] });

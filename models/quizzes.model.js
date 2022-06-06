@@ -19,7 +19,15 @@ module.exports = (mongoose) => {
                 banner: { type: String, required: [true, 'O campo banner não pode estar vazio ou ser inválido'] },
                 banner_webp: { type: String, required: [true, 'O campo banner_webp não pode estar vazio ou ser inválido'] },
                 questions: [],
-                comments: [],
+                comments: [
+                    {
+                        id: { type: Number },
+                        user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
+                        comment: String,
+                        date: { type: Date, default: new Date() }
+                    }
+                ],
+                times_played: { type: Number, default: 0 }
             }
         );
         

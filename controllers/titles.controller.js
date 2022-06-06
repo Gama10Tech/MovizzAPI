@@ -152,7 +152,7 @@ exports.deleteComment = async(req, res) => {
         if (String(req.body._id)) {
             if (await Title.findOne({ _id: req.body._id_title })) {
                     await Title.updateOne({_id: req.body._id_title}, { $pull: { comments: { _id:  req.body._id_comment} } }).exec();
-                    res.status(201).json({success: true, msg: "Comentário do utilizador #" + req.body._id_comment + " removido com sucesso" });
+                    res.status(200).json({success: true, msg: "Comentário do utilizador #" + req.body._id_comment + " removido com sucesso" });
             }
             else{
                 res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });

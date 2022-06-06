@@ -74,11 +74,11 @@ module.exports = (mongoose) => {
                 imdb_rating: { type: Number, required: [true, 'O campo imdb_rating não pode estar vazio ou ser inválido'] },
                 comments: [
                     {
-                        id:{type:Number},
-                        user_id:{type: mongoose.Schema.Types.ObjectId, ref: 'user'},
+                        id: { type: Number },
+                        user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
                         comment: String,
-                        date:{type: Date, default: new Date()},
-                        spoiler:Boolean
+                        date: { type: Date, default: new Date() },
+                        spoiler: { type: Boolean, default: false }
                     }
                 ]
             }

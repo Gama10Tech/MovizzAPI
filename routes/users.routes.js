@@ -41,10 +41,17 @@ router.route('/:id/seen')
     .post(authController.verifyToken, userController.addSeen)
     .delete(authController.verifyToken, userController.removeSeen);
 
-router.route('/:id/rating/:id_imdb')
-    .get(authController.verifyToken, userController.findRating)
-    .post(authController.verifyToken, userController.addRating)
-    .patch(authController.verifyToken, userController.changeRating)
-    .delete(authController.verifyToken, userController.removeRating);
+router.route('/:id/title_ratings/:id_imdb')
+    .get(authController.verifyToken, userController.findTitleRating)
+    .post(authController.verifyToken, userController.addTitleRating)
+    .patch(authController.verifyToken, userController.changeTitleRating)
+    .delete(authController.verifyToken, userController.removeTitleRating);
+
+router.route('/:id/quiz_ratings')
+    .post(authController.verifyToken, userController.addQuizRating);
+
+router.route('/:id/quiz_ratings/:quiz_id')
+    .patch(authController.verifyToken, userController.changeQuizRating)
+    .delete(authController.verifyToken, userController.removeQuizRating);
 
 module.exports = router;

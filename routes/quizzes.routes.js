@@ -13,4 +13,10 @@ router.route('/')
     .patch(authController.verifyToken, quizController.alterQuizById)
     .delete(authController.verifyToken, quizController.removeQuizById);
 
+router.route('/:quiz_id/comments')
+    .post(authController.verifyToken, quizController.addComment);
+
+router.route('/:quiz_id/comments/:comment_id')
+    .delete(authController.verifyToken, quizController.removeComment);
+
 module.exports = router;

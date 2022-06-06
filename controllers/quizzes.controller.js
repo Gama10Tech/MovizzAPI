@@ -53,7 +53,7 @@ exports.findOne = async (req, res) => {
     try {
         if (await User.findOne({ id: req.loggedUserId })) {
             if (isInt(req.params.quiz_id)) {
-                let data = await Quiz.findOne({ quiz_id: req.params.quiz_id }).lean().exec();
+                let data = await Quiz.findOne({ quiz_id: req.params.quiz_id }).populate("comments.user_id", "avatar first_name last_name _id id").lean().exec();
 
                 let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
                 let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
@@ -115,6 +115,79 @@ exports.removeQuizById = async(req, res) => {
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
         });
     }
+}
+
+exports.addComment = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId });
+        const quizData = await Quiz.findOne({ quiz_id: req.params.quiz_id }).exec();
+
+        if (!quizData) {
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
+        } else if (!req.body.comment.toString()) {
+            res.status(400).json({ success: false, msg: "The field 'comment' cannot be empty or invalid." });
+        } else {
+            quizData.comments.push({
+                id: quizData.comments.length == 0 ? 0 : Math.max(...quizData.comments.map(comment => comment.id)) + 1,
+                user_id: userInitiator._id,
+                comment: req.body.comment,
+                date: new Date()
+            });
+
+            await quizData.save();
+            await quizData.populate("comments.user_id", "avatar first_name last_name _id id").execPopulate();
+            res.status(201).json({
+                success: true,
+                msg: "Comment from user ID: " + userInitiator.id + " successfully added to the quiz ID " + quizData.quiz_id,
+                location: "/api/quizzes/" + quizData.quiz_id + "/comments/" + quizData.comments[quizData.comments.length - 1].id,
+                data: quizData.comments[quizData.comments.length - 1]
+            });
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+    }
+}
+
+exports.removeComment = async(req, res) => {
+    try {
+        const userInitiator = await User.findOne({ id: req.loggedUserId }).exec(); // This will always be executed successfully
+        const quizData = await Quiz.findOne({ quiz_id: req.params.quiz_id }).exec();
+
+        if (!quizData) {
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
+        } else {
+            const commentIdx = quizData.comments.findIndex(comment => comment.id.toString() == req.params.comment_id.toString());
+            if (commentIdx != -1) {
+                if ((userInitiator.is_admin) || (userInitiator._id.toString() == quizData.comments[commentIdx].user_id.toString())) {
+                    quizData.comments.splice(commentIdx, 1);
+                    await quizData.save();
+                    res.status(200).json({ success: true, msg: "Comment ID " + req.params.comment_id.toString() + " successfully removed from quiz ID " + quizData.quiz_id.toString() });
+                } else {
+                    res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any comment in the quiz requested." });
+            }
+        }
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+    }
+}
+
+exports.calculateRating = async(quiz_id) => {
+    let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
+    let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
+    while (i < len1) {
+        let j = 0, len2 = userWithRatings[i].quiz_ratings.length;
+        while (j < len2) {
+            if (userWithRatings[i].quiz_ratings[j].quiz_id.toString() == quiz_id.toString()) {
+                quant++;
+                sum += userWithRatings[i].quiz_ratings[j].rating;
+                break;
+            } j++
+        } i++;
+    }
+    return quant > 0 ? sum / quant : 0.0;
 }
 
 function isInt(value) {
