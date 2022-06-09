@@ -39,11 +39,13 @@ exports.findOne = async (req, res) => {
                 // Se o utilizador for administrador ou o id que está a tentar a ser acedido for o mesmo do auth_key mostrar a informação completa
                 if (userInitiator["is_admin"] || userData["id"] == userInitiator["id"]) {
                     let t = await User.find({ id: req.params.id }, 'id register_date first_name last_name email dob avatar badge_id points xp is_admin is_locked played title_ratings quiz_ratings seen favourites prizes_reedemed stats')
-                        .populate("played.quiz_id", "-questions -comments")
-                        .populate("badge_id")
-                        .populate("favourites", "imdb_id")
-                        .populate("seen", "-platforms")
-                        .exec();
+                    .populate("played.quiz_id", "-questions -comments")
+                    .populate("badge_id")
+                    .populate([{ path: "favourites", model: "title", select: "imdb_id poster poster_webp _id title genres year country imdb_rating", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
+                    .populate([{ path: "seen", model: "title", select: "-platforms", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
+                    .populate("title_ratings.title_id", "poster_webp poster title seasons")
+                    .populate("quiz_ratings.quiz_id", "poster_webp poster title")
+                    .exec();
                     // Mostrar a informação toda
                     res.status(200).json({ success: true, msg: t });
                 } else {
@@ -324,6 +326,7 @@ exports.removeSeen = async (req, res) => {
             if (req.body.title) {
                 // Verificar se esse objeto tem um campo válido
                 if (String(req.body.title)) {
+                    
                     if (await Title.findOne({ _id: req.body.title })) {
                         if (userTarget.id == userInitiator.id) {
                             success(userTarget);
