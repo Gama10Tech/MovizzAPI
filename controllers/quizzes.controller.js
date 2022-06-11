@@ -21,7 +21,7 @@ exports.findAll = async (req, res) => {
 
     async function success(top) {
         if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Quiz.find({}, 'quiz_id title theme_id poster poster_webp difficulty type theme_id times_played').populate("theme_id").lean().exec();
+            let data = await Quiz.find({}).populate("theme_id").lean().exec();
 
             let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
             let k = 0, len = data.length;
@@ -97,17 +97,67 @@ exports.create = async(req, res) => {
     }
 }
 
-exports.alterQuizById = async(req, res) => {
-    try {
-        res.status(200).json({ success: true, msg: "Ok"});
-    } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+exports.edit = async(req, res) => {
+    const userInitiator = await User.findOne({ id: req.loggedUserId }).exec();
+    if (userInitiator.is_admin) {
+        try {
+            const quizData = await Quiz.findOne({ quiz_id: req.params.quiz_id}).exec();
+            if (quizData) {
+                if (!req.body) {
+                    res.status(400).json({ success: false, msg: "The field 'data' cannot be empty or invalid." });
+                } else {
+                    quizData.type.description = req.body.type.description;
+                    quizData.type.questions = req.body.type.questions;
+                    quizData.difficulty.description = req.body.difficulty.description;
+                    quizData.difficulty.question_points = req.body.difficulty.question_points;
+                    quizData.is_specific = req.body.is_specific;
+                    quizData.title = req.body.title;
+                    quizData.description = req.body.description;
+                    quizData.theme_id = req.body.theme_id;
+                    quizData.questions = [];
+                    req.body.questions.forEach((question, i) => {
+                        quizData.questions.push({
+                            question_id: i,
+                            imdb_id: question.imdb_id,
+                            content: question.content,
+                            image: question.image,
+                            options: []
+                        });
+                        console.log(question.options);
+                        question.options.forEach(option => {
+                            quizData.questions[quizData.questions.length - 1].options.push({
+                                content: option.content,
+                                correct: option.correct
+                            });
+                        });
+                    })
+
+                    if (quizData.poster.toString() != req.body.poster.toString()) {
+                        quizData.poster = req.body.poster;
+                        quizData.poster_webp = null;
+                    }
+
+                    if (quizData.banner.toString() != req.body.banner.toString()) {
+                        quizData.banner = req.body.banner;
+                        quizData.banner_webp = null;
+                    }
+
+                    await quizData.save();
+                    await quizData.populate("theme_id").execPopulate();
+                    res.status(200).json({ success: true, msg: "The quiz ID " + quizData.quiz_id + " has been edited successfully.", location: "/api/quizzes/" + quizData.quiz_id, data: quizData });
+                }
+            } else {
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
+            }
+        } catch (err) {
+            res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+        }
+    } else {
+        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
     }
 }
 
-exports.removeQuizById = async(req, res) => {
+exports.remove = async(req, res) => {
     try {
         res.status(200).json({ success: true, msg: "Ok"});
     } catch (err) {
@@ -124,7 +174,7 @@ exports.addComment = async(req, res) => {
 
         if (!quizData) {
             res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
-        } else if (!req.body.comment.toString()) {
+        } else if (!req.body.comment && !req.body.comment.toString()) {
             res.status(400).json({ success: false, msg: "The field 'comment' cannot be empty or invalid." });
         } else {
             quizData.comments.push({

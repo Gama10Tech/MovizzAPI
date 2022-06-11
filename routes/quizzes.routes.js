@@ -10,8 +10,8 @@ router.route('/')
 
  router.route('/:quiz_id')
     .get(authController.verifyToken, quizController.findOne)
-    .patch(authController.verifyToken, quizController.alterQuizById)
-    .delete(authController.verifyToken, quizController.removeQuizById);
+    .patch(authController.verifyToken, quizController.edit)
+    .delete(authController.verifyToken, quizController.remove);
 
 router.route('/:quiz_id/comments')
     .post(authController.verifyToken, quizController.addComment);

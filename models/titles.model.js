@@ -5,9 +5,9 @@ module.exports = (mongoose) => {
                 title: { type: String, required: [true, 'O campo title não pode estar vazio ou ser inválido'] },
                 synopsis: { type: String, required: [true, 'O campo synopsis não pode estar vazio ou ser inválido'] },
                 poster: { type: String, required: [true, 'O campo poster não pode estar vazio ou ser inválido'] },
-                poster_webp:{ type: String, required: [true, 'O campo poster_webp não pode estar vazio ou ser inválido'] },
+                poster_webp: { type: String, default: null },
                 banner: { type: String, required: [true, 'O campo banner não pode estar vazio ou ser inválido'] },
-                banner_webp:{ type: String, required: [true, 'O campo banner_webp não pode estar vazio ou ser inválido'] },
+                banner_webp: { type: String, default: null },
                 trailer: { type: String, required: [true, 'O campo trailer não pode estar vazio ou ser inválido'] },
                 year: { type: String, required: [true, 'O campo year não pode estar vazio ou ser inválido'] },
                 country: { type: String, required: [true, 'O campo country não pode estar vazio ou ser inválido'] },
@@ -38,40 +38,40 @@ module.exports = (mongoose) => {
                         episode: Number,
                         title: String,
                         banner: String,
-                        banner_webp: String
+                        banner_webp: { type: String, default: null },
                     }
                 ],
                 cast: [
                     {
-                        id: Number,
+                        id: String,
                         image: String,
-                        image_webp: String,
+                        image_webp: { type: String, default: null },
                         name: String,
                         asCharacter: String
                     }
                 ],
                 producers: [
                     {
-                        id: Number,
+                        id: String,
                         name: String,
                         description: String
                     }
                 ],
                 directors: [
                     {
-                        id: Number,
+                        id: String,
                         name: String,
                         description: String
                     }
                 ],
                 writers: [
                     {
-                        id: Number,
+                        id: String,
                         name: String,
                         description: String
                     }
                 ],
-                imdb_rating: { type: Number, required: [true, 'O campo imdb_rating não pode estar vazio ou ser inválido'] },
+                imdb_rating: { type: String, required: [true, 'O campo imdb_rating não pode estar vazio ou ser inválido'] },
                 comments: [
                     {
                         id: { type: Number },

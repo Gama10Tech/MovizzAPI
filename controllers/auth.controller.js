@@ -7,20 +7,22 @@ exports.login = async (req, res) => {
     try {
         if (req.body.email) {
             if (req.body.password) {
-                const userData = await User.findOne({ $and: [ { email: req.body.email }, { password: req.body.password  } ] })
+                const userData = await User.findOne({ email: req.body.email }).exec();
                 if (userData) {
-                    if (!userData.is_locked) {
-                        const token = jwt.sign({ id: userData.id }, db.secret, { expiresIn: '24h' });
-                        res.status(200).json({ success: true, auth_key: token, exp_date: new Date(new Date().getTime() + (24 * 60 * 60 * 1000)).toString() });
+                    if (bcrypt.compareSync(req.body.password, userData.password)) {
+                        if (!userData.is_locked) {
+                            const token = jwt.sign({ id: userData.id }, db.secret, { expiresIn: '24h' });
+                            res.status(200).json({ success: true, auth_key: token, exp_date: new Date(new Date().getTime() + (24 * 60 * 60 * 1000)).toString() });
+                        } else {
+                            res.status(401).json({
+                                success: false, msg: "A conta encontra-se bloqueada, tente novamente mais tarde"
+                            });
+                        }
                     } else {
-                        res.status(401).json({
-                            success: false, msg: "A conta encontra-se bloqueada, tente novamente mais tarde"
-                        });
+                        res.status(401).json({ success: false, msg: "The password entered isn't correct." });
                     }
                 } else {
-                    res.status(401).json({
-                        success: false, msg: "A informação enviada não corresponde a nenhum utilizador"
-                    });
+                    res.status(401).json({ success: false, msg: "The email entered wasn't found in our system." });
                 }
             } else {
                 res.status(400).json({

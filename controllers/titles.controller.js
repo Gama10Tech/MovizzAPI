@@ -1,6 +1,7 @@
 const db = require("../models/index.js");
 const User = db.users;
 const Title = db.titles;
+const Quiz = db.quizzes;
 
 exports.findAll = async (req, res) => {
     try {
@@ -37,7 +38,7 @@ exports.findAll = async (req, res) => {
                 let data = await Title.find({}, 'imdb_id poster poster_webp title seasons').exec();
                 res.status(200).json({success: true, msg: data});
             } else {
-                let data = await Title.find({}, 'imdb_id poster poster_webp title imdb_rating genres year country seasons').populate("genres.genre_id").lean().exec();
+                let data = await Title.find({}, 'imdb_id poster poster_webp title imdb_rating genres year country seasons platforms').populate("genres.genre_id").populate("platforms.platform_id").lean().exec();
                 let userWithRatings = await User.find({ title_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
                 let userWithSeen = await User.find({ seen: { $exists: true, $not: {$size: 0} } }).lean().exec();
 
@@ -108,8 +109,10 @@ exports.findOne = async (req, res) => {
                     } else {
                         ratings = 0.0;
                     }
-
                     result.movizz_rating = ratings;
+                    // Determinar se há algum quiz que contém este título
+                    result.relatedQuizzes = await Quiz.find({ "questions.imdb_id": { $eq: result.imdb_id } }, "_id quiz_id title description banner banner_webp").exec();
+
                     res.status(200).json({success: true, msg: result });
                 } else {
                     res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum título" });
@@ -127,23 +130,167 @@ exports.findOne = async (req, res) => {
     }
 };
 
-exports.create=async(req,res)=>{
-    try {
-        res.status(200).json({ success: true, msg: "Ok"});
-    } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+exports.create = async(req, res) => {
+    const userInitiator = await User.findOne({ id: req.loggedUserId }); // This will always be available
+    
+    if (userInitiator.is_admin) {
+        req.body = req.body.title;
+        try {
+            if (!req.body.imdb_id.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'imdb_id' cannot be empty or invalid." });
+            }
+            else if (!req.body.title.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
+            }
+            else if (!req.body.synopsis.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'synopsis' cannot be empty or invalid." });
+            }
+            else if (!req.body.poster.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'poster' cannot be empty or invalid." });
+            }
+            else if (!req.body.banner.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'banner' cannot be empty or invalid." });
+            }
+            else if (!req.body.trailer.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'trailer' cannot be empty or invalid." });
+            }
+            else if (!req.body.year.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'year' cannot be empty or invalid." });
+            }
+            else if (!req.body.country.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'country' cannot be empty or invalid." });
+            }
+            else if (!req.body.language.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'language' cannot be empty or invalid." });
+            }
+            else if (!req.body.content_rating.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'content_rating' cannot be empty or invalid." });
+            }
+            else if (!req.body.duration.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'duration' cannot be empty or invalid." });
+            }
+            else if (!req.body.seasons.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'seasons' cannot be empty or invalid." });
+            }
+            else if (!req.body.platforms.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'platforms' cannot be empty or invalid." });
+            }
+            else if (!req.body.genres.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'genres' cannot be empty or invalid." });
+            }
+            else if (!req.body.cast.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'cast' cannot be empty or invalid." });
+            }
+            else if (!req.body.producers.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'producers' cannot be empty or invalid." });
+            }
+            else if (!req.body.directors.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'directors' cannot be empty or invalid." });
+            }
+            else if (!req.body.writers.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'writers' cannot be empty or invalid." });
+            }
+            else if (!req.body.imdb_rating.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'imdb_rating' cannot be empty or invalid." });
+            }
+            else if (await Title.findOne({ imdb_id: req.body.imdb_id.toString().trim() })) {
+                res.status(422).json({ success: false, msg: "The IMDb ID specified is already present in the database." });
+            }
+            else {
+                const newTitle = new Title({
+                    imdb_id: req.body.imdb_id,
+                    title: req.body.title,
+                    synopsis: req.body.synopsis,
+                    poster: req.body.poster,
+                    banner: req.body.banner,
+                    trailer: req.body.trailer,
+                    year: req.body.year,
+                    country: req.body.country,
+                    language: req.body.language,
+                    content_rating: req.body.content_rating,
+                    duration: req.body.duration,
+                    seasons: req.body.seasons,
+                    platforms: req.body.platforms,
+                    genres: req.body.genres,
+                    episodes: req.body.episodes ? req.body.episodes : [],
+                    cast: req.body.cast,
+                    producers: req.body.producers,
+                    directors: req.body.directors,
+                    writers: req.body.writers,
+                    imdb_rating: req.body.imdb_rating,
+                    comments: []
+                });
+
+                await newTitle.save();
+                res.status(201).json({ success: true, msg: "The title has been added to the database successfully.", location: "/api/titles/" + newTitle.imdb_id , data: newTitle });
+            }
+        }
+        catch (err) {
+            res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+        }
+    } else {
+        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
     }
 };
 
-exports.deleteByImdbId=async(req,res)=>{
-    try {
-        res.status(200).json({ success: true, msg: "Ok"});
-    } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+exports.delete = async(req, res) => {
+    const userInitiator = await User.findOne({ id: req.loggedUserId })
+    .populate("played.quiz_id", "-questions -comments")
+    .populate("badge_id")
+    .populate([{ path: "favourites", model: "title", select: "imdb_id poster poster_webp _id title genres", populate: { path: 'genres.genre_id', model: 'genre' } }])
+    .populate("seen", "-platforms")
+    .exec();
+    
+    if (userInitiator.is_admin) {
+        try {
+            const titleData = await Title.findOne({ imdb_id: req.params.imdb_id.toString().trim()}).exec();
+            
+            if (titleData) {
+                const allUsers = await User.find({}, "title_ratings seen favourites").exec();
+
+                allUsers.forEach(async user => {
+                    user.favourites = user.favourites.filter(fav => fav.toString() != titleData._id.toString());
+                    user.seen = user.seen.filter(seen => seen.toString() != titleData._id.toString());
+                    user.title_ratings = user.title_ratings.filter(rat => rat.title_id.toString() != titleData._id.toString());
+                    await user.save();
+                });
+
+                await titleData.remove();
+                res.status(200).json({ success: true, msg: "The title has been removed successfully.", data: userInitiator });
+            } else {
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
+            }
+        } catch (err) {
+            res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+        }
+    } else {
+        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
+    }
+};
+
+exports.changePlatforms = async(req, res) => {
+    const userInitiator = await User.findOne({ id: req.loggedUserId }).exec();
+    if (userInitiator.is_admin) {
+        try {
+            if (!req.body.platforms.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'platforms' cannot be empty or invalid." });
+            } else {
+                const titleData = await Title.findOne({ imdb_id: req.params.imdb_id.toString().trim()}).exec();
+            
+                if (titleData) {
+                    titleData.platforms = req.body.platforms;
+                    await titleData.save();
+                    await titleData.populate("platforms.platform_id").execPopulate();
+                    res.status(200).json({ success: true, msg: "Successfully updated platforms for title ID " + titleData.imdb_id + ".", location: "/api/titles/" + titleData.imdb_id, data: titleData });
+                } else {
+                    res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
+                }
+            }
+        } catch (err) {
+            res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+        }
+    } else {
+        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
     }
 };
 
@@ -165,7 +312,7 @@ exports.deleteComment = async(req, res) => {
     }
 };
 
-exports.createComment=async(req,res)=>{
+exports.createComment = async(req, res) => {
     try {
         if (req.body.title_id && req.body.user_id && req.body.comment && String(req.body.spoiler)) {
             let x=await Title.findOne({ _id: req.body.title_id })

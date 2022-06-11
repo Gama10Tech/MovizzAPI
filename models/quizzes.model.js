@@ -15,10 +15,24 @@ module.exports = (mongoose) => {
                 description: { type: String, required: [true, 'O campo description não pode estar vazio ou ser inválido'] },
                 theme_id: { type: mongoose.Schema.Types.ObjectId, ref: 'theme' },
                 poster: { type: String, required: [true, 'O campo poster não pode estar vazio ou ser inválido'] },
-                poster_webp: { type: String, required: [true, 'O campo poster_webp não pode estar vazio ou ser inválido'] },
+                poster_webp: { type: String, default: null },
                 banner: { type: String, required: [true, 'O campo banner não pode estar vazio ou ser inválido'] },
-                banner_webp: { type: String, required: [true, 'O campo banner_webp não pode estar vazio ou ser inválido'] },
-                questions: [],
+                banner_webp: { type: String, default: null },
+                questions: [
+                    {
+                        question_id: Number,
+                        imdb_id: String,
+                        content: String,
+                        type: { type: String, default: "texto" },
+                        image: String,
+                        options: [
+                            {
+                                content: String,
+                                correct: Boolean
+                            }
+                        ]
+                    }
+                ],
                 comments: [
                     {
                         id: { type: Number },

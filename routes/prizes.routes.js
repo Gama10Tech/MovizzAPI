@@ -10,7 +10,7 @@ router.route('/')
 
 router.route('/:prize_id')
     .get(authController.verifyToken, prizeController.findOne)
-    .patch(authController.verifyToken, prizeController.changePrizeById)
-    .delete(authController.verifyToken, prizeController.removePrizeById);
+    .patch(authController.verifyToken, prizeController.edit)
+    .delete(authController.verifyToken, prizeController.remove);
 
 module.exports = router;

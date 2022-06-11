@@ -5,7 +5,6 @@ const Badge = db.badges;
 const Title = db.titles;
 const Quiz = db.quizzes;
 const Prize = db.prizes;
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 exports.findAll = async (req, res) => {
@@ -18,7 +17,7 @@ exports.findAll = async (req, res) => {
                 .exec();
             res.status(200).json({ success: true, msg: data });
         } else {
-            let data = await User.find({}, 'id first_name avatar register_date is_locked badge_id xp stats.level')
+            let data = await User.find({}, 'id first_name last_name avatar register_date is_locked badge_id xp stats.level')
                 .populate("badge_id")
                 .exec();
             res.status(200).json({ success: true, msg: data });
@@ -38,13 +37,14 @@ exports.findOne = async (req, res) => {
             if (userData) {
                 // Se o utilizador for administrador ou o id que está a tentar a ser acedido for o mesmo do auth_key mostrar a informação completa
                 if (userInitiator["is_admin"] || userData["id"] == userInitiator["id"]) {
-                    let t = await User.find({ id: req.params.id }, 'id register_date first_name last_name email dob avatar badge_id points xp is_admin is_locked played title_ratings quiz_ratings seen favourites prizes_reedemed stats')
+                    let t = await User.find({ id: req.params.id }, '-password')
                     .populate("played.quiz_id", "-questions -comments")
                     .populate("badge_id")
                     .populate([{ path: "favourites", model: "title", select: "imdb_id poster poster_webp _id title genres year country imdb_rating", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
                     .populate([{ path: "seen", model: "title", select: "-platforms", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
-                    .populate("title_ratings.title_id", "poster_webp poster title seasons")
+                    .populate("title_ratings.title_id", "poster_webp poster title seasons imdb_id")
                     .populate("quiz_ratings.quiz_id", "poster_webp poster title")
+                    .populate("prizes_reedemed.prize_id")
                     .exec();
                     // Mostrar a informação toda
                     res.status(200).json({ success: true, msg: t });
@@ -94,7 +94,7 @@ exports.create = async (req, res) => {
                 "last_name": req.body.last_name,
                 "dob": req.body.dob,
                 "email": req.body.email,
-                "password": req.body.password
+                "password": bcrypt.hashSync(req.body.password, 10)
             });
 
             await newUser.save();
@@ -293,15 +293,14 @@ exports.addSeen = async (req, res) => {
                         } else {
                             res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
                         }
-                    }
-                    else {
+                    } else {
                         res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
             }
         } else {
             res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
@@ -326,7 +325,6 @@ exports.removeSeen = async (req, res) => {
             if (req.body.title) {
                 // Verificar se esse objeto tem um campo válido
                 if (String(req.body.title)) {
-                    
                     if (await Title.findOne({ _id: req.body.title })) {
                         if (userTarget.id == userInitiator.id) {
                             success(userTarget);
@@ -338,10 +336,10 @@ exports.removeSeen = async (req, res) => {
                         res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
             }
         } else {
             res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
@@ -698,7 +696,7 @@ exports.edit = async (req, res) => {
             'first_name': b.first_name,
             'last_name': b.last_name,
             'email': b.email,
-            'password': b.password == "" ? a.password : b.password,
+            'password': b.password == "" ? a.password : bcrypt.hashSync(b.password, 10),
             'dob': String(b.dob),
             'is_admin': c.is_admin ? b.is_admin : a.is_admin,
             'is_locked': c.is_admin ? b.is_locked : a.is_locked
@@ -885,6 +883,27 @@ exports.reedemPrize = async (req, res) => {
         }       
     } catch (err) {
         res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+    }
+};
+
+exports.changeBlockState = async (req, res) => {
+    const userTarget = await User.findOne({ id: req.params.id }).exec();
+    const userInitiator = await User.findOne({ id: req.loggedUserId }).exec();
+
+    try {
+        if (userInitiator.is_admin) {
+            if (userTarget) {
+                userTarget.is_locked = !userTarget.is_locked;
+                await userTarget.save()
+                res.status(200).json({success: true, msg: "The user ID " + userTarget.id + " has been successfully " + (userTarget.is_locked ? "blocked." : "unblocked.") });
+            } else {
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
+            }
+        } else {
+            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
+        }       
+    } catch (err) {
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 

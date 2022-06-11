@@ -12,6 +12,9 @@ router.route('/:id')
     .get(authController.verifyToken, userController.findOne)
     .patch(authController.verifyToken, userController.edit);
 
+router.route('/:id/is_locked')
+    .patch(authController.verifyToken, userController.changeBlockState);
+
 router.route('/:id/points')
     .post(authController.verifyToken, userController.addPoints);
 

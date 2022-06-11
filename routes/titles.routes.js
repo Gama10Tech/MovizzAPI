@@ -10,7 +10,10 @@ router.route('/')
 
 router.route('/:imdb_id')
     .get(authController.verifyToken, titleController.findOne)
-    .delete(authController.verifyToken, titleController.deleteByImdbId);
+    .delete(authController.verifyToken, titleController.delete);
+
+router.route('/:imdb_id/platforms')
+    .patch(authController.verifyToken, titleController.changePlatforms);
 
 router.route('/:imdb_id/comments')
     .delete(authController.verifyToken, titleController.deleteComment)
