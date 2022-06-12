@@ -43,9 +43,45 @@ exports.findOne = async (req, res) => {
                     .populate([{ path: "favourites", model: "title", select: "imdb_id poster poster_webp _id title genres year country imdb_rating", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
                     .populate([{ path: "seen", model: "title", select: "-platforms", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
                     .populate("title_ratings.title_id", "poster_webp poster title seasons imdb_id")
-                    .populate("quiz_ratings.quiz_id", "poster_webp poster title")
+                    .populate("quiz_ratings.quiz_id", "poster_webp poster title quiz_id")
                     .populate("prizes_reedemed.prize_id")
+                    .lean()
                     .exec();
+                    let titleComments = await Title.find({ 'comments.user_id':  t[0]._id }).exec();
+                    let quizComments = await Quiz.find({ 'comments.user_id': t[0]._id }).exec(); 
+
+                    t[0].all_comments = [];
+
+                    titleComments.forEach(title => {
+                        title.comments.forEach(comment => {
+                            if (comment.user_id.toString() == t[0]._id.toString()) {
+                                t[0].all_comments.push({
+                                    comment_data: comment,
+                                    imdb_id: title.imdb_id,
+                                    _id: title._id,
+                                    title:title.title,
+                                    seasons:title.seasons
+                                });
+                            }
+                        });
+                    });
+                    
+                    quizComments.forEach(quiz => {
+                        quiz.comments.forEach(comment => {
+                            if (comment.user_id.toString() == t[0]._id.toString()) {
+                                t[0].all_comments.push({
+                                    comment_data: comment,
+                                    quiz_id: quiz.quiz_id,
+                                    _id: quiz._id,
+                                    title:quiz.title,
+                                });
+                            }
+                        });
+                    });
+
+                    
+                    
+                    
                     // Mostrar a informação toda
                     res.status(200).json({ success: true, msg: t });
                 } else {
@@ -59,6 +95,7 @@ exports.findOne = async (req, res) => {
             res.status(404).json({ success: false, msg: "O campo id não pode estar vazio ou ser inválido" });
         }
     } catch (err) {
+        console.log(err);
         res.status(500).json({
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
         });
