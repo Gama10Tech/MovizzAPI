@@ -762,9 +762,9 @@ exports.addQuizAttempt = async (req, res) => {
         if (userTarget) {
             if (!req.body.quiz_id || !req.body.quiz_id.toString()) {
                 res.status(404).json({ success: false, msg: "O campo quiz_id não pode estar vazio ou ser inválido" });
-            } else if (!req.body.questions_right || !req.body.questions_right.toString()) {
+            } else if (!isInt(req.body.questions_right)) {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
-            } else if (!req.body.questions_wrong || !req.body.questions_wrong.toString()) {
+            } else if (!isInt(req.body.questions_wrong)) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
             } else if (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null") {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
@@ -801,6 +801,7 @@ exports.addQuizAttempt = async (req, res) => {
             res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
         }
     } catch (err) {
+        console.log(err);
         res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
     }
 };
@@ -811,9 +812,9 @@ exports.updateQuizAttempt = async (req, res) => {
     
     try {
         if (userTarget) {
-            if (!req.body.questions_right.toString()) {
+            if (!isInt(req.body.questions_right)) {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
-            } else if (!req.body.questions_wrong.toString()) {
+            } else if (!isInt(req.body.questions_wrong)) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
             } else if (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null") {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
