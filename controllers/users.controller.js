@@ -766,9 +766,9 @@ exports.addQuizAttempt = async (req, res) => {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
             } else if (!req.body.questions_wrong || !req.body.questions_wrong.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
-            } else if (req.body.allowed_points && (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null")) {
+            } else if (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null") {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
-            } else if (req.body.was_completed && (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null")) {
+            } else if (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null") {
                 res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
             } else {
                 const quizData = await Quiz.findOne({ _id: req.body.quiz_id });
@@ -815,9 +815,9 @@ exports.updateQuizAttempt = async (req, res) => {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
             } else if (!req.body.questions_wrong.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
-            } else if (req.body.allowed_points && (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null")) {
+            } else if (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null") {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
-            } else if (req.body.was_completed && (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null")) {
+            } else if (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null") {
                 res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
             } else {
                 if (userTarget._id.toString() == userInitiator._id.toString()) {
