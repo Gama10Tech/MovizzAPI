@@ -4,46 +4,30 @@ const User = db.users;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Platform.find().exec();
-            res.status(200).json({ success: true, msg: data });
-        } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
-        }
+        let data = await Platform.find().exec();
+        res.status(200).json({ success: true, msg: data });
     } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            if (isInt(req.params.platform_id)) {
-                const platform = await Platform.findOne({ platform_id: req.params.platform_id }).exec();
+        if (isInt(req.params.platform_id)) {
+            const platform = await Platform.findOne({ platform_id: req.params.platform_id }).exec();
 
-                if (platform === null)
-                    return res.status(404).json({
-                        success: false, msg: "O id especificado não pertence a nenhuma plataforma"
-                    });
-        
-                res.json({ success: true, msg: platform });
-            } else {
-                res.status(404).json({ success: false, msg: "O campo platform_id não pode estar vazio ou ser inválido" });
-            }
+            if (platform === null)
+                return res.status(404).json({
+                    success: false, msg: "The ID specified does not belong to any platform."
+                });
+    
+            res.json({ success: true, msg: platform });
         } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
+            res.status(404).json({ success: false, msg: "The field 'platform_id' cannot be empty or invalid." });
         }
     }
     catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 

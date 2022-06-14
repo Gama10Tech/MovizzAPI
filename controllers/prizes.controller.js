@@ -4,44 +4,32 @@ const User = db.users;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Prize.find().exec();
-            res.status(200).json({ success: true, msg: data });
-        } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
-        }
+        let data = await Prize.find().exec();
+        res.status(200).json({ success: true, msg: data });
     } catch (err) {
         res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+            success: false, msg: err.message || "Something went wrong, please try again later."
         });
     }
 };
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            if (isInt(req.params.prize_id)) {
-                const prize = await Prize.findOne({ prize_id: req.params.prize_id }).exec();
-                if (prize === null)
-                    return res.status(404).json({
-                        success: false, msg: "O id especificado não pertence a nenhum prémio"
-                    });
-        
-                res.json({ success: true, msg: prize });
-            } else {
-                res.status(404).json({ success: false, msg: "O campo prize_id não pode estar vazio ou ser inválido" });
-            }
+        if (isInt(req.params.prize_id)) {
+            const prize = await Prize.findOne({ prize_id: req.params.prize_id }).exec();
+            if (prize === null)
+                return res.status(404).json({
+                    success: false, msg: "The ID specified does not belong to any prize."
+                });
+    
+            res.json({ success: true, msg: prize });
         } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
+            res.status(404).json({ success: false, msg: "The field 'prize_id' cannot be empty or invalid." });
         }
     }
     catch (err) {
         res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+            success: false, msg: err.message || "Something went wrong, please try again later."
         });
     }
 };

@@ -4,45 +4,29 @@ const User = db.users;
 
 exports.findAll = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Badge.find().exec();
-            res.status(200).json({ success: true, msg: data });
-        } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
-        }
+        let data = await Badge.find().exec();
+        res.status(200).json({ success: true, msg: data });
     } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            if (isInt(req.params.badge_id)) {
-                const badge = await Badge.findOne({ badge_id: req.params.badge_id }).exec();
-                if (badge === null)
-                    return res.status(404).json({
-                        success: false, msg: "O id especificado não pertence a nenhuma medalha"
-                    });
-        
-                res.json({ success: true, msg: badge });
-            } else {
-                res.status(404).json({ success: false, msg: "O campo badge_id não pode estar vazio ou ser inválido" });
-            }
+        if (isInt(req.params.badge_id)) {
+            const badge = await Badge.findOne({ badge_id: req.params.badge_id }).exec();
+            if (badge === null)
+                return res.status(404).json({
+                    success: false, msg: "The ID specified does not belong to any badge."
+                });
+    
+            res.json({ success: true, msg: badge });
         } else {
-            res.status(401).json({
-                success: false, msg: "É necessário estar autenticado para realizar este pedido"
-            });
+            res.status(404).json({ success: false, msg: "The field 'badge_id' cannot be empty or invalid." });
         }
     }
     catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 

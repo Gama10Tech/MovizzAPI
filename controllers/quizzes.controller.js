@@ -15,74 +15,66 @@ exports.findAll = async (req, res) => {
         }
     } catch (err) {
         res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+            success: false, msg: err.message || "Something went wrong, please try again later."
         });
     }
 
     async function success(top) {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            let data = await Quiz.find({}).populate("theme_id").lean().exec();
+        let data = await Quiz.find({}).populate("theme_id").lean().exec();
 
-            let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
-            let k = 0, len = data.length;
-            while (k < len) {
-                let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
-                while (i < len1) {
-                    let j = 0, len2 = userWithRatings[i].quiz_ratings.length;
-                    while (j < len2) {
-                        if (userWithRatings[i].quiz_ratings[j].quiz_id.toString() == data[k]._id.toString()) {
-                            quant++;
-                            sum += userWithRatings[i].quiz_ratings[j].rating;
-                            userWithRatings[i].quiz_ratings.splice(j, 1);
-                            break;
-                        } j++
-                    } i++;
-                }
-                data[k].quizz_rating = quant > 0 ? sum / quant : 0.0;
-                k++;
+        let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
+        let k = 0, len = data.length;
+        while (k < len) {
+            let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
+            while (i < len1) {
+                let j = 0, len2 = userWithRatings[i].quiz_ratings.length;
+                while (j < len2) {
+                    if (userWithRatings[i].quiz_ratings[j].quiz_id.toString() == data[k]._id.toString()) {
+                        quant++;
+                        sum += userWithRatings[i].quiz_ratings[j].rating;
+                        userWithRatings[i].quiz_ratings.splice(j, 1);
+                        break;
+                    } j++
+                } i++;
             }
-
-            res.status(200).json({success: true, msg: top ? data.sort((a, b) => a.quizz_rating < b.quizz_rating && 1 || -1).slice(0, 11) : data});
-        } else {
-            res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });
+            data[k].quizz_rating = quant > 0 ? sum / quant : 0.0;
+            k++;
         }
+
+        res.status(200).json({success: true, msg: top ? data.sort((a, b) => a.quizz_rating < b.quizz_rating && 1 || -1).slice(0, 11) : data});
     };
 };
 
 exports.findOne = async (req, res) => {
     try {
-        if (await User.findOne({ id: req.loggedUserId })) {
-            if (isInt(req.params.quiz_id)) {
-                let data = await Quiz.findOne({ quiz_id: req.params.quiz_id }).populate("comments.user_id", "avatar first_name last_name _id id").lean().exec();
+        if (isInt(req.params.quiz_id)) {
+            let data = await Quiz.findOne({ quiz_id: req.params.quiz_id }).populate("comments.user_id", "avatar first_name last_name _id id").lean().exec();
 
-                let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
-                let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
-                while (i < len1) {
-                    let j = 0, len2 = userWithRatings[i].quiz_ratings.length;
-                    while (j < len2) {
-                        if (userWithRatings[i].quiz_ratings[j].quiz_id.toString() == data._id.toString()) {
-                            quant++;
-                            sum += userWithRatings[i].quiz_ratings[j].rating;
-                            break;
-                        } j++
-                    } i++;
-                }
-                data.quizz_rating = quant > 0 ? sum / quant : 0.0;
+            let userWithRatings = await User.find({ quiz_ratings: { $exists: true, $not: {$size: 0} } }).lean().exec();
+            let i = 0, len1 = userWithRatings.length, sum = 0.0, quant = 0;
+            while (i < len1) {
+                let j = 0, len2 = userWithRatings[i].quiz_ratings.length;
+                while (j < len2) {
+                    if (userWithRatings[i].quiz_ratings[j].quiz_id.toString() == data._id.toString()) {
+                        quant++;
+                        sum += userWithRatings[i].quiz_ratings[j].rating;
+                        break;
+                    } j++
+                } i++;
+            }
+            data.quizz_rating = quant > 0 ? sum / quant : 0.0;
 
-                if (data) {
-                    res.status(200).json({ success: true, msg: data });
-                } else {
-                    res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum quiz" });
-                }
+            if (data) {
+                res.status(200).json({ success: true, msg: data });
             } else {
-                res.status(404).json({ success: false, msg: "O campo quiz_id não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
             }
         } else {
-            res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido"});
+            res.status(404).json({ success: false, msg: "The field 'quiz_id' cannot be empty or invalid." });
         }
     } catch (err) {
         res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+            success: false, msg: err.message || "Something went wrong, please try again later."
         });
     }
 };

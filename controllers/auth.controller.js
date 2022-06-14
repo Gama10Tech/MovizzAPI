@@ -15,7 +15,7 @@ exports.login = async (req, res) => {
                             res.status(200).json({ success: true, auth_key: token, exp_date: new Date(new Date().getTime() + (24 * 60 * 60 * 1000)).toString() });
                         } else {
                             res.status(401).json({
-                                success: false, msg: "A conta encontra-se bloqueada, tente novamente mais tarde"
+                                success: false, msg: "Your account has been locked, try again later."
                             });
                         }
                     } else {
@@ -26,17 +26,17 @@ exports.login = async (req, res) => {
                 }
             } else {
                 res.status(400).json({
-                    success: false, msg: "O campo password não pode estar vazio"
+                    success: false, msg: "The field 'password' cannot be empty or invalid."
                 });
             }
         } else {
             res.status(400).json({
-                success: false, msg: "O campo email não pode estar vazio"
+                success: false, msg: "The field 'email' cannot be empty or invalid."
             });
         }
     } catch (err) {
         res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+            success: false, msg: err.message || "Something went wrong, please try again later."
         });
     }
 };
@@ -56,6 +56,6 @@ exports.verifyToken = async (req, res, next) => {
             res.status(401).json({ success: false, msg: "You are not authorized to make this request, please make sure you are correctly signed in." });
         }
     } catch (err) {
-        return res.status(401).json({ success: false, msg: "É necessário estar autenticado para realizar este pedido" });
+        return res.status(401).json({ success: false, msg: "A valid authentication is required to make this request." });
     }
 }

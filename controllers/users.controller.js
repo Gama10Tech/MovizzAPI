@@ -24,7 +24,7 @@ exports.findAll = async (req, res) => {
         }
     } catch (err) {
         res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+            success: false, msg: err.message || "Something went wrong, please try again later."
         });
     }
 };
@@ -93,15 +93,13 @@ exports.findOne = async (req, res) => {
                     res.status(200).json({ success: true, msg: result });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O campo id não pode estar vazio ou ser inválido" });
+            res.status(404).json({ success: false, msg: "The field 'id' cannot be empty or invalid." });
         }
     } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -109,22 +107,22 @@ exports.create = async (req, res) => {
     req.body = req.body.user;
     try {
         if (!req.body.email) {
-            res.status(400).json({ success: false, msg: "O campo email tem de estar preenchido" });
+            res.status(400).json({ success: false, msg: "The field 'email' cannot be empty or invalid." });
         }
         else if (!req.body.first_name) {
-            res.status(400).json({ success: false, msg: "O campo first_name tem de estar preenchido" });
+            res.status(400).json({ success: false, msg: "The field 'first_name' cannot be empty or invalid." });
         }
         else if (!req.body.last_name) {
-            res.status(400).json({ success: false, msg: "O campo last_name tem de estar preenchido" });
+            res.status(400).json({ success: false, msg: "The field 'last_name' cannot be empty or invalid." });
         }
         else if (!req.body.password) {
-            res.status(400).json({ success: false, msg: "O campo password tem de estar preenchido" });
+            res.status(400).json({ success: false, msg: "The field 'password' cannot be empty or invalid." });
         }
         else if (!req.body.dob) {
-            res.status(400).json({ success: false, msg: "O campo dob tem de estar preenchido" });
+            res.status(400).json({ success: false, msg: "The field 'dob' cannot be empty or invalid." });
         }
         else if (await User.findOne({ email: req.body.email })) {
-            res.status(422).json({ success: false, msg: "O e-mail introduzido já está a ser utilizado" });
+            res.status(422).json({ success: false, msg: "The email entered is already being used in the platform." });
         }
         else {
             const highestID = await User.find({}, 'id').sort({ id: -1 }).limit(1).exec();
@@ -138,12 +136,12 @@ exports.create = async (req, res) => {
             });
 
             await newUser.save();
-            res.status(201).json({ success: true, msg: "Utilizador registado com sucesso" });
+            res.status(201).json({ success: true, msg: "User registered successfully.", location: "/api/users/" + newUser.id });
         }
     }
     catch (err) {
         res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
+            success: false, msg: err.message || "Something went wrong, please try again later."
         });
     }
 };
@@ -170,28 +168,28 @@ exports.changeBadge = async (req, res) => {
                             if (userTarget.id == userInitiator.id) {
                                 success(userTarget);
                             } else {
-                                res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                                res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                             }
                         }
                     } else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhuma medalha" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any badge." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo badge_id não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'badge_id' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo badge_id não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'badge_id' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
     async function success(a) {
         await User.updateOne({ _id: a._id }, { 'badge_id': req.body.badge_id }).exec();
-        res.status(201).json({ success: true, msg: "Badge do utilizador #" + a.id + " alterada com sucesso para " + req.body.badge_id, location: "/api/users/" + a.id });
+        res.status(201).json({ success: true, msg: "Badge of the user ID " + a.id + " successfully changed to the badge ID " + req.body.badge_id + ".", location: "/api/users/" + a.id });
     };
 };
 
@@ -214,25 +212,25 @@ exports.changeAvatar = async (req, res) => {
                         if (userTarget.id == userInitiator.id) {
                             success(userTarget);
                         } else {
-                            res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                         }
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'avatar' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'avatar' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
     async function success(a) {
         await User.updateOne({ _id: a._id }, { 'avatar': req.body.avatar }).exec();
-        res.status(201).json({ success: true, msg: "Avatar do utilizador #" + a.id + " alterado com sucesso para " + req.body.avatar, location: "/api/users/" + a.id });
+        res.status(201).json({ success: true, msg: "Avatar of the user ID " + a.id + " successfully changed to " + req.body.avatar + ".", location: "/api/users/" + a.id });
     };
 };
 
@@ -251,28 +249,28 @@ exports.addFavourite = async (req, res) => {
                         if (userTarget.id == userInitiator.id) {
                             success(userTarget);
                         } else {
-                            res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                         }
                     }
                     else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
     async function success(a) {
         await User.updateOne({ _id: a._id }, { $push: { 'favourites': req.body.title } }).exec();
-        res.status(201).json({ success: true, msg: "Favorito do utilizador #" + a.id + " adicionado com sucesso para " + req.body.title, location: "/api/users/" + a.id });
+        res.status(201).json({ success: true, msg: "Successfully added favourite from user ID " + a.id + " to the title ID " + req.body.title + ".", location: "/api/users/" + a.id });
     };
 };
 
@@ -291,28 +289,28 @@ exports.removeFavourite = async (req, res) => {
                         if (userTarget.id == userInitiator.id) {
                             success(userTarget);
                         } else {
-                            res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                         }
                     }
                     else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
     async function success(a) {
         await User.updateOne({ _id: a._id }, { $pull: { 'favourites': req.body.title } }).exec();
-        res.status(201).json({ success: true, msg: "Favorito do utilizador #" + a.id + " removido com sucesso" });
+        res.status(201).json({ success: true, msg: "Successfully removed favourite from user ID " + a.id + "." });
     };
 };
 
@@ -331,27 +329,27 @@ exports.addSeen = async (req, res) => {
                         if (userTarget.id == userInitiator.id) {
                             success(userTarget);
                         } else {
-                            res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                         }
                     } else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
     async function success(a) {
         await User.updateOne({ _id: a._id }, { $push: { 'seen': req.body.title } }).exec();
-        res.status(201).json({ success: true, msg: "Visto do utilizador #" + a.id + " adicionado com sucesso para " + req.body.title, location: "/api/users/" + a.id });
+        res.status(201).json({ success: true, msg: "Successfully marked the title ID " + req.body.title  + " as seen of the user ID " + a.id + ".", location: "/api/users/" + a.id });
     };
 };
 
@@ -369,28 +367,28 @@ exports.removeSeen = async (req, res) => {
                         if (userTarget.id == userInitiator.id) {
                             success(userTarget);
                         } else {
-                            res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                         }
                     }
                     else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
     async function success(a) {
         await User.updateOne({ _id: a._id }, { $pull: { 'seen': req.body.title } }).exec();
-        res.status(201).json({ success: true, msg: "Visto do utilizador #" + a.id + " removido com sucesso" });
+        res.status(201).json({ success: true, msg: "Successfully removed title marked as seen from user ID " + a.id + "." });
     };
 };
 
@@ -411,17 +409,17 @@ exports.findTitleRating = async (req, res) => {
 
                     res.status(201).json({ success: true, msg: result.length > 0 ? result[0].rating : 0 });
                 } else {
-                    res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                    res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                 }
             }
             else {
-                res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -445,24 +443,23 @@ exports.addTitleRating = async (req, res) => {
                             userTarget.title_ratings.push(req.body);
                             await userTarget.save();
                             await userTarget.populate("title_ratings.title_id", "poster poster_webp seasons imdb_id title _id").execPopulate();
-                            res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " adicionado com sucesso", data: userTarget });
+                            res.status(201).json({ success: true, msg: "Rating from the user ID " + userTarget._id + " added successfully.", data: userTarget });
                         }
                     } else {
-
-                        res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                     }
                 }
                 else {
-                    res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                    res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo title_id e rating não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'title_id' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -475,9 +472,7 @@ exports.changeTitleRating = async (req, res) => {
         if (userTarget) {
             if (req.body.title_id && req.body.rating) {
                 if (String(req.body.title_id)) {
-
                     if (await Title.findOne({ _id: req.body.title_id })) {
-
                         if (userTarget.id == userInitiator.id) {
                             let j = userTarget.title_ratings.filter(u => u.title_id == req.body.title_id)
                             if (j.length > 0) {
@@ -485,27 +480,27 @@ exports.changeTitleRating = async (req, res) => {
                                 userTarget.title_ratings[ratingIdx].rating = req.body.rating;
                                 await userTarget.save();
                                 await userTarget.populate("title_ratings.title_id", "poster poster_webp seasons imdb_id title _id").execPopulate();
-                                res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " alterado com sucesso", data: userTarget });
+                                res.status(201).json({ success: true, msg: "Rating from the user ID " + userTarget._id + " updated successfully.", data: userTarget });
                             }
                         } else {
 
-                            res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                         }
                     }
                     else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo title_id não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'title_id' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo title_id e rating não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The fields 'title_id' and 'rating', cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -524,25 +519,25 @@ exports.removeTitleRating = async (req, res) => {
                                 userTarget.title_ratings = userTarget.title_ratings.filter(u => u.title_id.toString() != req.body.title_id.toString());
                                 await userTarget.save();
                                 await userTarget.populate("title_ratings.title_id", "poster poster_webp seasons imdb_id title _id").execPopulate();
-                                res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " removido com sucesso", data: userTarget });
+                                res.status(201).json({ success: true, msg: "Rating from the user ID " + userTarget._id + " removed successfully.", data: userTarget });
                             }
                         } else {
-                            res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                            res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                         }
                     } else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo title_id não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "The field 'title_id' cannot be empty or invalid." });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo title_id e rating não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The fields 'title_id' and 'rating', cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -693,51 +688,51 @@ exports.edit = async (req, res) => {
                                                     if (userTarget.id == userByEmail.id) {
                                                         success(userTarget, req.body, userInitiator);
                                                     } else {
-                                                        res.status(422).json({ success: false, msg: "O e-mail introduzido já está a ser utilizado" });
+                                                        res.status(422).json({ success: false, msg: "The email entered is already being used in the platform." });
                                                     }
                                                 } else {
                                                     if (userTarget.id == userInitiator.id) {
                                                         if (userTarget.id == userByEmail.id) {
                                                             success(userTarget, req.body, userInitiator);
                                                         } else {
-                                                            res.status(422).json({ success: false, msg: "O e-mail introduzido já está a ser utilizado" });
+                                                            res.status(422).json({ success: false, msg: "The email entered is already being used in the platform." });
                                                         }
                                                     } else {
-                                                        res.status(422).json({ success: false, msg: "O e-mail introduzido já está a ser utilizado" });
+                                                        res.status(422).json({ success: false, msg: "The email entered is already being used in the platform." });
                                                     }
                                                 }
                                             } else {
                                                 success(userTarget, req.body, userInitiator);
                                             }
                                         } else {
-                                            res.status(400).json({ success: false, msg: "O campo is_locked não pode estar vazio ou ser inválido" });
+                                            res.status(400).json({ success: false, msg: "The field 'is_locked' cannot be empty or invalid." });
                                         }
                                     } else {
-                                        res.status(400).json({ success: false, msg: "O campo is_admin não pode estar vazio ou ser inválido" });
+                                        res.status(400).json({ success: false, msg: "The field 'is_admin' cannot be empty or invalid." });
                                     }
                                 } else {
-                                    res.status(400).json({ success: false, msg: "O campo dob não pode estar vazio ou ser inválido" });
+                                    res.status(400).json({ success: false, msg: "The field 'dob' cannot be empty or invalid." });
                                 }
                             } else {
-                                res.status(400).json({ success: false, msg: "O campo password não pode estar vazio ou ser inválido" });
+                                res.status(400).json({ success: false, msg: "The field 'password' cannot be empty or invalid." });
                             }
                         } else {
-                            res.status(400).json({ success: false, msg: "O campo email não pode estar vazio ou ser inválido" });
+                            res.status(400).json({ success: false, msg: "The field 'email' cannot be empty or invalid." });
                         }
                     } else {
-                        res.status(400).json({ success: false, msg: "O campo last_name não pode estar vazio ou ser inválido" });
+                        res.status(400).json({ success: false, msg: "The field 'last_name' cannot be empty or invalid." });
                     }
                 } else {
-                    res.status(400).json({ success: false, msg: "O campo first_name não pode estar vazio ou ser inválido" });
+                    res.status(400).json({ success: false, msg: "The field 'first_name' cannot be empty or invalid." });
                 }
             } else {
-                res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
+                res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
     async function success(a, b, c) {
@@ -750,7 +745,7 @@ exports.edit = async (req, res) => {
             'is_admin': c.is_admin ? b.is_admin : a.is_admin,
             'is_locked': c.is_admin ? b.is_locked : a.is_locked
         }).exec();
-        res.status(201).json({ success: true, msg: "Utilizador #" + a.id + " atualizado com sucesso", location: "/api/users/" + a.id });
+        res.status(201).json({ success: true, msg: "Successfully updated the information of the user ID " + a.id + ".", location: "/api/users/" + a.id });
     };
 };
 
@@ -761,15 +756,15 @@ exports.addQuizAttempt = async (req, res) => {
     try {
         if (userTarget) {
             if (!req.body.quiz_id || !req.body.quiz_id.toString()) {
-                res.status(404).json({ success: false, msg: "O campo quiz_id não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "The field 'quiz_id' cannot be empty or invalid." });
             } else if (!isInt(req.body.questions_right)) {
-                res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
+                res.status(400).json({ success: false, msg: "The field 'questions_right' cannot be empty or invalid." });
             } else if (!isInt(req.body.questions_wrong)) {
-                res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
+                res.status(400).json({ success: false, msg: "The field 'questions_wrong' cannot be empty or invalid." });
             } else if (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null") {
-                res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
+                res.status(400).json({ success: false, msg: "The field 'allowed_points' cannot be empty or invalid." });
             } else if (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null") {
-                res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
+                res.status(400).json({ success: false, msg: "The field 'was_completed' cannot be empty or invalid." });
             } else {
                 const quizData = await Quiz.findOne({ _id: req.body.quiz_id });
                 if (quizData) {
@@ -789,20 +784,20 @@ exports.addQuizAttempt = async (req, res) => {
                         await userTarget.save();
                         await userTarget.populate("played.quiz_id", "-questions -comments").execPopulate();
 
-                        res.status(201).json({ success: true, msg: "Tentativa de quiz registada com sucesso", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[userTarget.played.length - 1]._id, data: userTarget.played[userTarget.played.length - 1] });
+                        res.status(201).json({ success: true, msg: "Quiz attempt registered successfully.", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[userTarget.played.length - 1]._id, data: userTarget.played[userTarget.played.length - 1] });
                     } else {
-                        res.status(401).json({ success: false, msg: "Não tem permissões para realizar este pedido" });
+                        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum quiz" });
+                    res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
                 }
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
         console.log(err);
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -813,13 +808,13 @@ exports.updateQuizAttempt = async (req, res) => {
     try {
         if (userTarget) {
             if (!isInt(req.body.questions_right)) {
-                res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
+                res.status(400).json({ success: false, msg: "The field 'questions_right' cannot be empty or invalid." });
             } else if (!isInt(req.body.questions_wrong)) {
-                res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
+                res.status(400).json({ success: false, msg: "The field 'questions_wrong' cannot be empty or invalid." });
             } else if (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null") {
-                res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
+                res.status(400).json({ success: false, msg: "The field 'allowed_points' cannot be empty or invalid." });
             } else if (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null") {
-                res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
+                res.status(400).json({ success: false, msg: "The field 'was_completed' cannot be empty or invalid." });
             } else {
                 if (userTarget._id.toString() == userInitiator._id.toString()) {
                     const gameIdx = userTarget.played.findIndex(game => game._id.toString() == req.params.played_id.toString())
@@ -838,19 +833,19 @@ exports.updateQuizAttempt = async (req, res) => {
 
                         await userTarget.save();
                         await userTarget.populate("played.quiz_id", "-questions -comments").execPopulate();
-                        res.status(201).json({ success: true, msg: "Tentativa de quiz atualizada com sucesso", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[gameIdx]._id, data: userTarget.played[gameIdx] });
+                        res.status(201).json({ success: true, msg: "Quiz attempt successfully updated.", location: "/api/users/" + userTarget.id + "/played/" + userTarget.played[gameIdx]._id, data: userTarget.played[gameIdx] });
                     } else {
-                        res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum jogo jogado" });
+                        res.status(404).json({ success: false, msg: "The ID specified does not belong to any game played." });
                     }
                 } else {
-                    res.status(401).json({ success: false, msg: "Não tem permissões para realizar este pedido" });
+                    res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
                 }
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -862,18 +857,18 @@ exports.addPoints = async (req, res) => {
                 if (isInt(req.body.points)) {
                     userTarget.points = userTarget.points + req.body.points;
                     await userTarget.save();
-                    res.status(201).json({ success: true, msg: "Pontos do utilizador #" + userTarget.id + " atualizado com sucesso", location: "/api/users/" + userTarget.id });
+                    res.status(201).json({ success: true, msg: "Points from the user ID " + userTarget.id + " updated successfully.", location: "/api/users/" + userTarget.id });
                 } else {
-                    res.status(400).json({ success: false, msg: "O campo points não pode estar vazio ou ser inválido" });
+                    res.status(400).json({ success: false, msg: "The field 'points' cannot be empty or invalid." });
                 }
             } else {
-                res.status(400).json({ success: false, msg: "O campo points não pode estar vazio ou ser inválido" });
+                res.status(400).json({ success: false, msg: "The field 'points' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -892,18 +887,18 @@ exports.addXP = async (req, res) => {
                     }
 
                     await userTarget.save();
-                    res.status(201).json({ success: true, msg: "XP do utilizador #" + userTarget.id + " atualizado com sucesso", location: "/api/users/" + userTarget.id, passed_level: didUserLevelUp });
+                    res.status(201).json({ success: true, msg: "XP from the user ID " + userTarget.id + " updated successfully.", location: "/api/users/" + userTarget.id, passed_level: didUserLevelUp });
                 } else {
-                    res.status(400).json({ success: false, msg: "O campo xp não pode estar vazio ou ser inválido" });
+                    res.status(400).json({ success: false, msg: "The field 'xp' cannot be empty or invalid." });
                 }
             } else {
-                res.status(400).json({ success: false, msg: "O campo xp não pode estar vazio ou ser inválido" });
+                res.status(400).json({ success: false, msg: "The field 'xp' cannot be empty or invalid." });
             }
         } else {
-            res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
+            res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
@@ -913,7 +908,7 @@ exports.reedemPrize = async (req, res) => {
         if (req.body.prize_id && req.body.prize_id.toString()) {
             const prize = await Prize.findOne({ _id: req.body.prize_id.toString() }).exec();
             if (prize === null) {
-                return res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum prémio" });
+                return res.status(404).json({ success: false, msg: "The ID specified does not belong to any prize." });
             } else {
                 if (userTarget.points - prize.price >= 0) {
                     userTarget.points = userTarget.points - prize.price;
@@ -923,16 +918,16 @@ exports.reedemPrize = async (req, res) => {
                     });
                     await userTarget.save();
                     await userTarget.populate("prizes_reedemed.prize_id").execPopulate();
-                    res.status(201).json({success: true, msg: "Prémio do utilizador #" +  userTarget.id + " redimido com sucesso ", data: userTarget.prizes_reedemed[userTarget.prizes_reedemed.length - 1] });
+                    res.status(201).json({success: true, msg: "Successfully redeemed prize for user ID " +  userTarget.id + ".", data: userTarget.prizes_reedemed[userTarget.prizes_reedemed.length - 1] });
                 } else {
-                    res.status(406).json({ success: false, msg: "O utilizador não possui fundos insuficientes" });
+                    res.status(406).json({ success: false, msg: "You do not have enough funds to redeem this prize." });
                 }
             }
         } else {
-            res.status(400).json({ success: false, msg: "O campo prize_id não pode estar vazio ou ser inválido" });
+            res.status(400).json({ success: false, msg: "The field 'prize_id' cannot be empty or invalid." });
         }       
     } catch (err) {
-        res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
+        res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 };
 
