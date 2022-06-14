@@ -40,4 +40,4 @@ app.all('*', function (req, res) {
     res.status(404).json({ message: 'O recurso acedido não existe' });
 })
 
-app.listen(port, host, () => console.log(`App listening at http://${host}:${port}/`));
+app.listen(port, () => console.log(`App listening at http://${host}:${port}/`));
