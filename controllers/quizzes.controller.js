@@ -97,7 +97,7 @@ exports.create = async(req, res) => {
             else if (!req.body.difficulty || !req.body.difficulty.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'difficulty' cannot be empty or invalid." });
             }
-            else if ( !req.body.is_specific.toString() || req.body.is_specific.toString() == "undefiend" || req.body.is_specific.toString() == "null") {
+            else if (!req.body.is_specific.toString() || req.body.is_specific.toString() == "undefiend" || req.body.is_specific.toString() == "null") {
                 res.status(400).json({ success: false, msg: "The field 'is_specific' cannot be empty or invalid." });
             }
             else if (!req.body.title || !req.body.title.toString().trim()) {
@@ -206,7 +206,7 @@ exports.edit = async(req, res) => {
 
 exports.remove = async(req, res) => {
     const userInitiator = await User.findOne({ id: req.loggedUserId }).exec();
-    console.log(userInitiator);
+    
     if (userInitiator.is_admin) {
         try {
             const quizData = await Quiz.findOne({ quiz_id: req.params.quiz_id.toString().trim()}).exec();
@@ -240,7 +240,7 @@ exports.addComment = async(req, res) => {
 
         if (!quizData) {
             res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
-        } else if (!req.body.comment || !req.body.comment.toString()) {
+        } else if (!req.body.comment && !req.body.comment.toString()) {
             res.status(400).json({ success: false, msg: "The field 'comment' cannot be empty or invalid." });
         } else {
             quizData.comments.push({

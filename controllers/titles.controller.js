@@ -272,7 +272,7 @@ exports.changePlatforms = async(req, res) => {
     const userInitiator = await User.findOne({ id: req.loggedUserId }).exec();
     if (userInitiator.is_admin) {
         try {
-            if (!req.body.platforms || !req.body.platforms.toString().trim()) {
+            if (!req.body.platforms.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'platforms' cannot be empty or invalid." });
             } else {
                 const titleData = await Title.findOne({ imdb_id: req.params.imdb_id.toString().trim()}).exec();
@@ -296,7 +296,7 @@ exports.changePlatforms = async(req, res) => {
 
 exports.deleteComment = async(req, res) => {
     try {
-        
+        if (String(req.body._id)) {
             if (await Title.findOne({ _id: req.body._id_title })) {
                     await Title.updateOne({_id: req.body._id_title}, { $pull: { comments: { _id:  req.body._id_comment} } }).exec();
                     res.status(200).json({success: true, msg: "Comentário do utilizador #" + req.body._id_comment + " removido com sucesso" });
@@ -304,7 +304,9 @@ exports.deleteComment = async(req, res) => {
             else{
                 res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
             }
-        
+        } else {
+            res.status(404).json({ success: false, msg: "O campo _id não pode estar vazio ou ser inválido" });
+        }
     } catch (err) {
         res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
     }

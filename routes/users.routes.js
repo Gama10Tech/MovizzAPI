@@ -35,7 +35,7 @@ router.route('/:id/played/:played_id')
 
 router.route('/:id/avatar')
     .post(authController.verifyToken, userController.changeAvatar);
-//falta isto
+
 router.route('/:id/favourites')
     .post(authController.verifyToken, userController.addFavourite)
     .delete(authController.verifyToken, userController.removeFavourite);

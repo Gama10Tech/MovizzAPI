@@ -114,13 +114,13 @@ exports.create = async(req, res) => {
     
     if (userInitiator.is_admin) {
         try {
-            if (!req.body.name.toString().trim()) {
+            if (!req.body.name || !req.body.name.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'name' cannot be empty or invalid." });
             }
-            else if (!req.body.image.toString().trim()) {
+            else if (!req.body.image || !req.body.image.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'image' cannot be empty or invalid." });
             }
-            else if (!req.body.price.toString().trim()) {
+            else if (!req.body.price || !req.body.price.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'price' cannot be empty or invalid." });
             }
             else {

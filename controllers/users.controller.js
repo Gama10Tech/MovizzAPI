@@ -47,6 +47,7 @@ exports.findOne = async (req, res) => {
                     .populate("prizes_reedemed.prize_id")
                     .lean()
                     .exec();
+
                     let titleComments = await Title.find({ 'comments.user_id':  t[0]._id }).exec();
                     let quizComments = await Quiz.find({ 'comments.user_id': t[0]._id }).exec(); 
 
@@ -65,7 +66,7 @@ exports.findOne = async (req, res) => {
                             }
                         });
                     });
-                    
+
                     quizComments.forEach(quiz => {
                         quiz.comments.forEach(comment => {
                             if (comment.user_id.toString() == t[0]._id.toString()) {
@@ -79,14 +80,17 @@ exports.findOne = async (req, res) => {
                         });
                     });
 
-                    
-                    
-                    
                     // Mostrar a informação toda
                     res.status(200).json({ success: true, msg: t });
                 } else {
                     // Mostrar apenas parte da informação
-                    res.status(200).json({ success: true, msg: await User.find({ id: req.params.id }, 'id first_name last_name avatar register_date badge_id xp seen favorites stats') });
+                    const result =  await User.find({ id: req.params.id }, 'id first_name last_name avatar register_date badge_id xp seen favourites stats')
+                    .populate("badge_id")
+                    .populate([{ path: "favourites", model: "title", select: "imdb_id poster poster_webp _id title genres year country imdb_rating", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
+                    .populate([{ path: "seen", model: "title", select: "-platforms", populate: { path: 'genres.genre_id',select: "description", model: 'genre' } }])
+                    .lean()
+                    .exec();
+                    res.status(200).json({ success: true, msg: result });
                 }
             } else {
                 res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
@@ -95,7 +99,6 @@ exports.findOne = async (req, res) => {
             res.status(404).json({ success: false, msg: "O campo id não pode estar vazio ou ser inválido" });
         }
     } catch (err) {
-        console.log(err);
         res.status(500).json({
             success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
         });
@@ -157,7 +160,7 @@ exports.changeBadge = async (req, res) => {
                 // Verificar se esse objeto tem um campo válido
                 if (String(req.body.badge_id)) {
                     // Verificar se esse id pertence às medalhas
-                    const newMedal = await Badge.findOne({badge_id:req.body.badge_id});
+                    const newMedal = await Badge.findOne({ badge_id:req.body.badge_id });
                     if (newMedal) {
                         // Permitir logo se o initiator for administrador
                         if (userInitiator.is_admin) {
@@ -255,10 +258,10 @@ exports.addFavourite = async (req, res) => {
                         res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
             }
         } else {
             res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
@@ -295,10 +298,10 @@ exports.removeFavourite = async (req, res) => {
                         res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
                     }
                 } else {
-                    res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                    res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
                 }
             } else {
-                res.status(404).json({ success: false, msg: "O campo avatar não pode estar vazio ou ser inválido" });
+                res.status(404).json({ success: false, msg: "O campo title não pode estar vazio ou ser inválido" });
             }
         } else {
             res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum utilizador" });
@@ -439,8 +442,10 @@ exports.addTitleRating = async (req, res) => {
                     if (userTarget.id == userInitiator.id) {
                         let j = userTarget.title_ratings.filter(u => u.title_id == t._id)
                         if (j.length == 0) {
-                            await User.updateOne({ _id: userTarget._id }, { $push: { 'title_ratings': req.body } }).exec();
-                            res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " adicionado com sucesso" });
+                            userTarget.title_ratings.push(req.body);
+                            await userTarget.save();
+                            await userTarget.populate("title_ratings.title_id", "poster poster_webp seasons imdb_id title _id").execPopulate();
+                            res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " adicionado com sucesso", data: userTarget });
                         }
                     } else {
 
@@ -476,8 +481,11 @@ exports.changeTitleRating = async (req, res) => {
                         if (userTarget.id == userInitiator.id) {
                             let j = userTarget.title_ratings.filter(u => u.title_id == req.body.title_id)
                             if (j.length > 0) {
-                                await User.updateOne({ _id: userTarget._id, "title_ratings.title_id": req.body.title_id }, { $set: { 'title_ratings.$.rating': req.body.rating } }).exec();
-                                res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " alterado com sucesso" });
+                                const ratingIdx = userTarget.title_ratings.findIndex(tt => tt.title_id.toString() == req.body.title_id.toString());
+                                userTarget.title_ratings[ratingIdx].rating = req.body.rating;
+                                await userTarget.save();
+                                await userTarget.populate("title_ratings.title_id", "poster poster_webp seasons imdb_id title _id").execPopulate();
+                                res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " alterado com sucesso", data: userTarget });
                             }
                         } else {
 
@@ -513,8 +521,10 @@ exports.removeTitleRating = async (req, res) => {
                         if (userTarget.id == userInitiator.id) {
                             let j = userTarget.title_ratings.filter(u => u.title_id == req.body.title_id)
                             if (j.length > 0) {
-                                await User.updateOne({ _id: userTarget._id }, { $pull: { 'title_ratings': { 'title_id': req.body.title_id } } });
-                                res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " removido com sucesso" });
+                                userTarget.title_ratings = userTarget.title_ratings.filter(u => u.title_id.toString() != req.body.title_id.toString());
+                                await userTarget.save();
+                                await userTarget.populate("title_ratings.title_id", "poster poster_webp seasons imdb_id title _id").execPopulate();
+                                res.status(201).json({ success: true, msg: "Rating do utilizador #" + userTarget._id + " removido com sucesso", data: userTarget });
                             }
                         } else {
                             res.status(401).json({ success: false, msg: "É necessário ter permissões para realizar este pedido" });
@@ -542,9 +552,9 @@ exports.addQuizRating = async (req, res) => {
         const userTarget = await User.findOne({ id: req.params.id });
 
         if (userTarget) {
-            if (!req.body.quiz_id.toString()) {
+            if (!req.body.quiz_id || !req.body.quiz_id.toString()) {
                 res.status(400).json({ success: false, msg: "The field 'quiz_id' cannot be empty or invalid." });
-            } else if (!req.body.rating.toString()) {
+            } else if (!req.body.rating || !req.body.rating.toString()) {
                 res.status(400).json({ success: false, msg: "The field 'rating' cannot be empty or invalid." });
             } else if (!isInt(req.body.rating)) {
                 res.status(400).json({ success: false, msg: "The field 'rating' cannot be empty or invalid." });
@@ -557,6 +567,7 @@ exports.addQuizRating = async (req, res) => {
                             rating: parseInt(req.body.rating)
                         });
                         await userTarget.save();
+                        await userTarget.populate("quiz_ratings.quiz_id", "poster poster_webp quiz_id title _id").execPopulate();
                         const newAverage = await calculateRating(quizData._id);
                         res.status(201).json({
                             success: true,
@@ -598,6 +609,7 @@ exports.changeQuizRating = async (req, res) => {
                         if (ratingIdx != -1) {
                             userTarget.quiz_ratings[ratingIdx].rating = parseInt(req.body.rating);
                             await userTarget.save();
+                            await userTarget.populate("quiz_ratings.quiz_id", "poster poster_webp quiz_id title _id").execPopulate();
                             const newAverage = await calculateRating(quizData._id);
                             res.status(200).json({
                                 success: true,
@@ -754,9 +766,9 @@ exports.addQuizAttempt = async (req, res) => {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
             } else if (!req.body.questions_wrong || !req.body.questions_wrong.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
-            } else if (!req.body.allowed_points || !req.body.allowed_points.toString()) {
+            } else if (req.body.allowed_points && (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null")) {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
-            } else if (!req.body.was_completed || !req.body.was_completed.toString()) {
+            } else if (req.body.was_completed && (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null")) {
                 res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
             } else {
                 const quizData = await Quiz.findOne({ _id: req.body.quiz_id });
@@ -799,13 +811,13 @@ exports.updateQuizAttempt = async (req, res) => {
     
     try {
         if (userTarget) {
-            if (!req.body.questions_right|| !req.body.questions_right.toString()) {
+            if (!req.body.questions_right.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
-            } else if (!req.body.questions_wrong || !req.body.questions_wrong.toString()) {
+            } else if (!req.body.questions_wrong.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
-            } else if (req.body.allowed_points=="null" || !req.body.allowed_points.toString()) {
+            } else if (req.body.allowed_points && (req.body.allowed_points.toString() == "undefined" || req.body.allowed_points.toString() == "null")) {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
-            } else if (req.body.was_completed=="null" || !req.body.was_completed.toString()) {
+            } else if (req.body.was_completed && (req.body.was_completed.toString() == "undefined" || req.body.was_completed.toString() == "null")) {
                 res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
             } else {
                 if (userTarget._id.toString() == userInitiator._id.toString()) {
@@ -897,7 +909,7 @@ exports.addXP = async (req, res) => {
 exports.reedemPrize = async (req, res) => {
     const userTarget = await User.findOne({ id: req.params.id });
     try {
-        if (req.body.prize_id || req.body.prize_id.toString()) {
+        if (req.body.prize_id && req.body.prize_id.toString()) {
             const prize = await Prize.findOne({ _id: req.body.prize_id.toString() }).exec();
             if (prize === null) {
                 return res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum prémio" });

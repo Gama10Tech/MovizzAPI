@@ -15,7 +15,7 @@ db.url = dbConfig.URL;
             );
         console.log("Connected to the database!");
     } catch (error) {
-        console.log("Cannot connect to the database!", err);
+        console.log("Cannot connect to the database!", error);
         process.exit();
     }
 })();

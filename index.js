@@ -6,11 +6,12 @@ const app = express();
 const port = process.env.PORT;	 	
 const host = process.env.HOST; 	
 
-const corsOptions = {
-    origin: "http://localhost:8080"
-};
+// const corsOptions = {
+//     origin: "http://localhost:8080"
+// };
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 
 app.get('/api', function (req, res) {
