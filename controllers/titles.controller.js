@@ -136,61 +136,61 @@ exports.create = async(req, res) => {
     if (userInitiator.is_admin) {
         req.body = req.body.title;
         try {
-            if (!req.body.imdb_id.toString().trim()) {
+            if (!req.body.imdb_id || !req.body.imdb_id.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'imdb_id' cannot be empty or invalid." });
             }
-            else if (!req.body.title.toString().trim()) {
+            else if (!req.body.title || !req.body.title.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
             }
-            else if (!req.body.synopsis.toString().trim()) {
+            else if (!req.body.synopsis || !req.body.synopsis.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'synopsis' cannot be empty or invalid." });
             }
-            else if (!req.body.poster.toString().trim()) {
+            else if (!req.body.poster || !req.body.poster.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'poster' cannot be empty or invalid." });
             }
-            else if (!req.body.banner.toString().trim()) {
+            else if (!req.body.banner || !req.body.banner.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'banner' cannot be empty or invalid." });
             }
-            else if (!req.body.trailer.toString().trim()) {
+            else if (!req.body.trailer || !req.body.trailer.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'trailer' cannot be empty or invalid." });
             }
-            else if (!req.body.year.toString().trim()) {
+            else if (!req.body.year || !req.body.year.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'year' cannot be empty or invalid." });
             }
-            else if (!req.body.country.toString().trim()) {
+            else if (!req.body.country || !req.body.country.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'country' cannot be empty or invalid." });
             }
-            else if (!req.body.language.toString().trim()) {
+            else if (!req.body.language || !req.body.language.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'language' cannot be empty or invalid." });
             }
-            else if (!req.body.content_rating.toString().trim()) {
+            else if (!req.body.content_rating || !req.body.content_rating.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'content_rating' cannot be empty or invalid." });
             }
-            else if (!req.body.duration.toString().trim()) {
+            else if (req.body.duration.toString().trim() == "undefined" || req.body.duration.toString().trim() == "null") {
                 res.status(400).json({ success: false, msg: "The field 'duration' cannot be empty or invalid." });
             }
-            else if (!req.body.seasons.toString().trim()) {
+            else if (req.body.seasons.toString().trim() == "undefined" || req.body.seasons.toString().trim() == "null") {
                 res.status(400).json({ success: false, msg: "The field 'seasons' cannot be empty or invalid." });
             }
-            else if (!req.body.platforms.toString().trim()) {
+            else if (!req.body.platforms || !req.body.platforms.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'platforms' cannot be empty or invalid." });
             }
-            else if (!req.body.genres.toString().trim()) {
+            else if (!req.body.genres || !req.body.genres.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'genres' cannot be empty or invalid." });
             }
-            else if (!req.body.cast.toString().trim()) {
+            else if (!req.body.cast || !req.body.cast.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'cast' cannot be empty or invalid." });
             }
-            else if (!req.body.producers.toString().trim()) {
+            else if (!req.body.producers || !req.body.producers.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'producers' cannot be empty or invalid." });
             }
-            else if (!req.body.directors.toString().trim()) {
+            else if (!req.body.directors || !req.body.directors.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'directors' cannot be empty or invalid." });
             }
-            else if (!req.body.writers.toString().trim()) {
+            else if (!req.body.writers || !req.body.writers.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'writers' cannot be empty or invalid." });
             }
-            else if (!req.body.imdb_rating.toString().trim()) {
+            else if (req.body.imdb_rating.toString().trim() == "undefined" || req.body.imdb_rating.toString().trim() == "null") {
                 res.status(400).json({ success: false, msg: "The field 'imdb_rating' cannot be empty or invalid." });
             }
             else if (await Title.findOne({ imdb_id: req.body.imdb_id.toString().trim() })) {
@@ -256,7 +256,7 @@ exports.delete = async(req, res) => {
                 });
 
                 await titleData.remove();
-                res.status(200).json({ success: true, msg: "The title has been removed successfully.", data: userInitiator });
+                res.status(200).json({ success: true, msg: "The title has been removed successfully." });
             } else {
                 res.status(404).json({ success: false, msg: "The ID specified does not belong to any title." });
             }
@@ -272,7 +272,7 @@ exports.changePlatforms = async(req, res) => {
     const userInitiator = await User.findOne({ id: req.loggedUserId }).exec();
     if (userInitiator.is_admin) {
         try {
-            if (!req.body.platforms.toString().trim()) {
+            if (!req.body.platforms || !req.body.platforms.toString().trim()) {
                 res.status(400).json({ success: false, msg: "The field 'platforms' cannot be empty or invalid." });
             } else {
                 const titleData = await Title.findOne({ imdb_id: req.params.imdb_id.toString().trim()}).exec();
@@ -296,7 +296,7 @@ exports.changePlatforms = async(req, res) => {
 
 exports.deleteComment = async(req, res) => {
     try {
-        if (String(req.body._id)) {
+        
             if (await Title.findOne({ _id: req.body._id_title })) {
                     await Title.updateOne({_id: req.body._id_title}, { $pull: { comments: { _id:  req.body._id_comment} } }).exec();
                     res.status(200).json({success: true, msg: "Comentário do utilizador #" + req.body._id_comment + " removido com sucesso" });
@@ -304,9 +304,7 @@ exports.deleteComment = async(req, res) => {
             else{
                 res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum titulo" });
             }
-        } else {
-            res.status(404).json({ success: false, msg: "O campo _id não pode estar vazio ou ser inválido" });
-        }
+        
     } catch (err) {
         res.status(500).json({ success: false, msg: err.message || "Algo falhou, por favor tente mais tarde" });
     }

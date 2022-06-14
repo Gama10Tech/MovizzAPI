@@ -88,12 +88,60 @@ exports.findOne = async (req, res) => {
 };
 
 exports.create = async(req, res) => {
-    try {
-        res.status(200).json({ success: true, msg: "Ok"});
-    } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+    const userInitiator = await User.findOne({ id: req.loggedUserId }); // This will always be available
+    if (userInitiator.is_admin) {
+        try {
+            if (!req.body.type || !req.body.type.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'type' cannot be empty or invalid." });
+            }
+            else if (!req.body.difficulty || !req.body.difficulty.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'difficulty' cannot be empty or invalid." });
+            }
+            else if ( !req.body.is_specific.toString() || req.body.is_specific.toString() == "undefiend" || req.body.is_specific.toString() == "null") {
+                res.status(400).json({ success: false, msg: "The field 'is_specific' cannot be empty or invalid." });
+            }
+            else if (!req.body.title || !req.body.title.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'title' cannot be empty or invalid." });
+            }
+            else if (!req.body.description || !req.body.description.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'description' cannot be empty or invalid." });
+            }
+            else if (!req.body.theme_id || !req.body.theme_id.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'theme_id' cannot be empty or invalid." });
+            }
+            else if (!req.body.poster || !req.body.poster.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'poster' cannot be empty or invalid." });
+            }
+            else if (!req.body.banner || !req.body.banner.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'banner' cannot be empty or invalid." });
+            }
+            else if (!req.body.questions || !req.body.questions.toString().trim()) {
+                res.status(400).json({ success: false, msg: "The field 'questions' cannot be empty or invalid." });
+            }
+            else {
+                const highestID = await Quiz.find({}, "quiz_id").sort({ quiz_id: -1 }).limit(1).exec();
+                const newQuiz = new Quiz({
+                    quiz_id: parseInt(highestID[0].quiz_id) + 1,
+                    type: req.body.type,
+                    difficulty: req.body.difficulty,
+                    is_specific: req.body.is_specific,
+                    title: req.body.title,
+                    description: req.body.description,
+                    theme_id: req.body.theme_id,
+                    poster: req.body.poster,
+                    banner: req.body.banner,
+                    questions: req.body.questions,
+                });
+
+                await newQuiz.save();
+                res.status(201).json({ success: true, msg: "The quiz has been added to the database successfully.", location: "/api/quizzes/" + newQuiz.quiz_id , data: newQuiz });
+            }
+        }
+        catch (err) {
+            res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+        }
+    } else {
+        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
     }
 }
 
@@ -123,7 +171,6 @@ exports.edit = async(req, res) => {
                             image: question.image,
                             options: []
                         });
-                        console.log(question.options);
                         question.options.forEach(option => {
                             quizData.questions[quizData.questions.length - 1].options.push({
                                 content: option.content,
@@ -158,12 +205,31 @@ exports.edit = async(req, res) => {
 }
 
 exports.remove = async(req, res) => {
-    try {
-        res.status(200).json({ success: true, msg: "Ok"});
-    } catch (err) {
-        res.status(500).json({
-            success: false, msg: err.message || "Algo falhou, por favor tente mais tarde"
-        });
+    const userInitiator = await User.findOne({ id: req.loggedUserId }).exec();
+    console.log(userInitiator);
+    if (userInitiator.is_admin) {
+        try {
+            const quizData = await Quiz.findOne({ quiz_id: req.params.quiz_id.toString().trim()}).exec();
+            
+            if (quizData) {
+                const allUsers = await User.find({}, "quiz_ratings played").exec();
+
+                allUsers.forEach(async user => {
+                    user.played = user.played.filter(game => game.quiz_id.toString() != quizData._id.toString());
+                    user.quiz_ratings = user.quiz_ratings.filter(rat => rat.quiz_id.toString() != quizData._id.toString());
+                    await user.save();
+                });
+
+                await quizData.remove();
+                res.status(200).json({ success: true, msg: "The quiz has been removed successfully." });
+            } else {
+                res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
+            }
+        } catch (err) {
+            res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
+        }
+    } else {
+        res.status(401).json({ success: false, msg: "You are not authorized to make this request." });
     }
 }
 
@@ -174,7 +240,7 @@ exports.addComment = async(req, res) => {
 
         if (!quizData) {
             res.status(404).json({ success: false, msg: "The ID specified does not belong to any quiz." });
-        } else if (!req.body.comment && !req.body.comment.toString()) {
+        } else if (!req.body.comment || !req.body.comment.toString()) {
             res.status(400).json({ success: false, msg: "The field 'comment' cannot be empty or invalid." });
         } else {
             quizData.comments.push({

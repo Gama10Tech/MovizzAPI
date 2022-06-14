@@ -157,7 +157,7 @@ exports.changeBadge = async (req, res) => {
                 // Verificar se esse objeto tem um campo válido
                 if (String(req.body.badge_id)) {
                     // Verificar se esse id pertence às medalhas
-                    const newMedal = await Badge.findOne(req.badge_id);
+                    const newMedal = await Badge.findOne({badge_id:req.body.badge_id});
                     if (newMedal) {
                         // Permitir logo se o initiator for administrador
                         if (userInitiator.is_admin) {
@@ -748,15 +748,15 @@ exports.addQuizAttempt = async (req, res) => {
     
     try {
         if (userTarget) {
-            if (!req.body.quiz_id.toString()) {
+            if (!req.body.quiz_id || !req.body.quiz_id.toString()) {
                 res.status(404).json({ success: false, msg: "O campo quiz_id não pode estar vazio ou ser inválido" });
-            } else if (!req.body.questions_right.toString()) {
+            } else if (!req.body.questions_right || !req.body.questions_right.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
-            } else if (!req.body.questions_wrong.toString()) {
+            } else if (!req.body.questions_wrong || !req.body.questions_wrong.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
-            } else if (!req.body.allowed_points.toString()) {
+            } else if (!req.body.allowed_points || !req.body.allowed_points.toString()) {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
-            } else if (!req.body.was_completed.toString()) {
+            } else if (!req.body.was_completed || !req.body.was_completed.toString()) {
                 res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
             } else {
                 const quizData = await Quiz.findOne({ _id: req.body.quiz_id });
@@ -799,13 +799,13 @@ exports.updateQuizAttempt = async (req, res) => {
     
     try {
         if (userTarget) {
-            if (!req.body.questions_right.toString()) {
+            if (!req.body.questions_right|| !req.body.questions_right.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_right não pode estar vazio ou ser inválido" });
-            } else if (!req.body.questions_wrong.toString()) {
+            } else if (!req.body.questions_wrong || !req.body.questions_wrong.toString()) {
                 res.status(400).json({ success: false, msg: "O campo questions_wrong tem de estar preenchido" });
-            } else if (!req.body.allowed_points.toString()) {
+            } else if (req.body.allowed_points=="null" || !req.body.allowed_points.toString()) {
                 res.status(400).json({ success: false, msg: "O campo allowed_points tem de estar preenchido" });
-            } else if (!req.body.was_completed.toString()) {
+            } else if (req.body.was_completed=="null" || !req.body.was_completed.toString()) {
                 res.status(400).json({ success: false, msg: "O campo was_completed tem de estar preenchido" });
             } else {
                 if (userTarget._id.toString() == userInitiator._id.toString()) {
@@ -845,7 +845,7 @@ exports.addPoints = async (req, res) => {
     const userTarget = await User.findOne({ id: req.params.id });
     try {
         if (userTarget) {
-            if (req.body.points.toString()) {
+            if (req.body.points && req.body.points.toString()) {
                 if (isInt(req.body.points)) {
                     userTarget.points = userTarget.points + req.body.points;
                     await userTarget.save();
@@ -868,7 +868,7 @@ exports.addXP = async (req, res) => {
     const userTarget = await User.findOne({ id: req.params.id });
     try {
         if (userTarget) {
-            if (req.body.xp.toString()) {
+            if (req.body.xp && req.body.xp.toString()) {
                 if (isInt(req.body.xp)) {
                     let didUserLevelUp = false;
                     userTarget.xp = userTarget.xp + req.body.xp;
@@ -897,7 +897,7 @@ exports.addXP = async (req, res) => {
 exports.reedemPrize = async (req, res) => {
     const userTarget = await User.findOne({ id: req.params.id });
     try {
-        if (req.body.prize_id.toString()) {
+        if (req.body.prize_id || req.body.prize_id.toString()) {
             const prize = await Prize.findOne({ _id: req.body.prize_id.toString() }).exec();
             if (prize === null) {
                 return res.status(404).json({ success: false, msg: "O id especificado não pertence a nenhum prémio" });
