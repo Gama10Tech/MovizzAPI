@@ -24,7 +24,7 @@ exports.findOne = async (req, res) => {
     
             res.json({ success: true, msg: theme });
         } else {
-            res.status(404).json({ success: false, msg: "The field 'theme_id' cannot be empty or invalid.O campo theme_id não pode estar vazio ou ser inválido" });
+            res.status(404).json({ success: false, msg: "The field 'theme_id' cannot be empty or invalid."});
         }
     }
     catch (err) {

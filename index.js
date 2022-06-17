@@ -37,7 +37,7 @@ app.use('/api/themes', require('./routes/themes.routes.js'))
 app.use('/api/prizes', require('./routes/prizes.routes.js'))
 
 app.all('*', function (req, res) {
-    res.status(404).json({ message: 'O recurso acedido não existe' });
+    res.status(404).json({ message: "The resource you're trying to access does not exist."});
 })
 
 app.listen(port, () => console.log(`App listening at http://${host}:${port}/`));
