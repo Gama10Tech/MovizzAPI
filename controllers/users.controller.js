@@ -158,7 +158,7 @@ exports.changeBadge = async (req, res) => {
                 // Verificar se esse objeto tem um campo válido
                 if (String(req.body.badge_id)) {
                     // Verificar se esse id pertence às medalhas
-                    const newMedal = await Badge.findOne({ badge_id:req.body.badge_id });
+                    const newMedal = await Badge.findOne({ _id: req.body.badge_id });
                     if (newMedal) {
                         // Permitir logo se o initiator for administrador
                         if (userInitiator.is_admin) {
@@ -184,6 +184,7 @@ exports.changeBadge = async (req, res) => {
             res.status(404).json({ success: false, msg: "The ID specified does not belong to any user." });
         }
     } catch (err) {
+        console.log(err);
         res.status(500).json({ success: false, msg: err.message || "Something went wrong, please try again later." });
     }
 
